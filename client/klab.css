@@ -67,6 +67,66 @@ body, html {
   }
 }
 
+#scores {
+  position: absolute;
+  left: 50%;
+  top: 20px;
+  bottom: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  transform: translateX(-50%) rotate(1deg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 400px;
+  border: 8px solid orange;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+}
+
+#scores .names {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin: 0 20px;
+}
+
+#scores .names div {
+  text-align: center;
+  border-right: 1px solid grey;
+  border-bottom: 1px solid grey;
+  width: 150px;
+  padding: 20px;
+}
+
+#scores .names div:last-child {
+  border-right: 0;
+}
+
+#scores .rounds {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+#scores .rounds .round {
+  display: flex;
+  flex-direction: row;
+}
+
+#scores .rounds .round div {
+  width: 150px;
+  padding: 5px 20px;
+  text-align: center;
+  border-right: 1px solid grey;
+}
+
+#scores .rounds .round div:last-child {
+  border-right: 0;
+}
+
+#scores .buttons {
+  padding: 20px 0;
+}
+
 #error a {
   color: white;
   text-decoration: none;
@@ -249,4 +309,38 @@ p {
 .klab-game .players {
   flex-grow: 1;
   width: 100%;
+  position: relative;
+}
+
+.klab-game .players .player {
+  position: absolute;
+  background: rgba(139, 69, 19, 0.5);
+}
+
+.klab-game .players .player1 {
+  width: 50%;
+  height: 25%;
+  left: 25%;
+  bottom: 0;
+}
+
+.klab-game .players .player2 {
+  width: 25%;
+  height: 50%;
+  right: 0;
+  top: 25%;
+}
+
+.klab-game .players .player3 {
+  width: 50%;
+  height: 25%;
+  left: 25%;
+  top: 0;
+}
+
+.klab-game .players .player4 {
+  width: 25%;
+  height: 50%;
+  left: 0;
+  top: 25%;
 }

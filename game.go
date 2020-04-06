@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"sync"
+	"time"
 
 	"golang.org/x/net/websocket"
 )
@@ -152,5 +153,38 @@ func (g *Game) MaybeStart(conn *websocket.Conn) (bool, error) {
 		}))
 	}
 
+	go g.run()
+
 	return true, nil
+}
+
+func (g *Game) run() {
+	g.mu.Lock()
+	var playerNames []string
+	for _, p := range g.players {
+		playerNames = append(playerNames, p.name)
+	}
+	g.mu.Unlock()
+
+	scores := make(map[string]int)
+	var rounds [][]int
+
+	for {
+		var round []int
+		for _, p := range playerNames {
+			round = append(round, scores[p])
+		}
+		rounds = append(rounds, round)
+
+		g.mu.Lock()
+		for _, p := range g.players {
+			websocket.JSON.Send(p.conn, MakeMessage("game_scores", GameScoresMessage{
+				PlayerNames: playerNames,
+				Scores: rounds,
+			}))
+		}
+		g.mu.Unlock()
+
+		time.Sleep(10*time.Second)
+	}
 }
