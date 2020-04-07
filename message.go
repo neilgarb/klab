@@ -37,6 +37,10 @@ type GameScoresMessage struct {
 	Scores      [][]int  `json:"scores"`
 }
 
+type RoundStartedMessage struct {
+	Dealer int `json:"dealer"`
+}
+
 func MakeMessage(typ string, data interface{}) *Message {
 	b, err := json.Marshal(data)
 	if err != nil {

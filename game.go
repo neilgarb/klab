@@ -2,6 +2,7 @@ package klab
 
 import (
 	"errors"
+	"math/rand"
 	"strings"
 	"sync"
 	"time"
@@ -169,6 +170,8 @@ func (g *Game) run() {
 	scores := make(map[string]int)
 	var rounds [][]int
 
+	dealer := rand.Intn(g.playerCount)
+
 	for {
 		var round []int
 		for _, p := range playerNames {
@@ -185,6 +188,22 @@ func (g *Game) run() {
 		}
 		g.mu.Unlock()
 
+		time.Sleep(5*time.Second)
+
+		g.mu.Lock()
+		for _, p := range g.players {
+			websocket.JSON.Send(p.conn, MakeMessage("round_started", RoundStartedMessage{
+				Dealer: dealer,
+			}))
+		}
+		g.mu.Unlock()
+
+		/*
+		deck := NewDeck(false)
+		deck.Shuffle()
+		 */
+
 		time.Sleep(10*time.Second)
+		dealer = (dealer + 1) % g.playerCount
 	}
 }

@@ -13,7 +13,7 @@ function init() {
 }
 
 function connect() {
-  ws = new WebSocket('ws://127.0.0.1:8081/ws');
+  ws = new WebSocket('ws://localhost:8080/ws');
   ws.onopen = function() {
     console.log('ws open');
     $overlay.hide();
@@ -258,7 +258,11 @@ function showGame(data) {
     <img src="jack.png">
     <h1>Jassus, boet!</h1>
   </div>
-  <div class="players"></div>
+  <div class="players">
+  </div>
+  <div class="dealer" style="display: none;">
+    <span>Dealer</span> 
+  </div>
 </div>
 `);
 
@@ -267,6 +271,10 @@ function showGame(data) {
     switch (msg.type) {
       case 'game_scores':
         showGameScores(msg.data);
+        break;
+      case 'round_started':
+        $scores.hide();
+        moveDealer(msg.data);
         break;
       case 'error':
         showError(msg.data);
@@ -304,10 +312,18 @@ function showGame(data) {
     $player = $(`
 <div class="player player${i+1}">
   <span class="name">${positions[i]}</span>
+  <div class="dealer-pos"></div>
 </div>
 `);
     $players.append($player);
   }
+}
+
+function moveDealer(data) {
+  let $dealer = $klab.find('.dealer');
+  let $clone = $dealer.clone().show();
+  $dealer.remove();
+  $klab.find('.players .player').eq(data.dealer).append($clone);
 }
 
 function showGameScores(data) {

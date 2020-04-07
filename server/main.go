@@ -4,6 +4,8 @@ import (
 	"flag"
 	"math/rand"
 	"net/http"
+	"os"
+	"path"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
@@ -20,7 +22,13 @@ func main() {
 
 	r.GET("/ws", websocketHandler)
 
-	http.ListenAndServe(":8081", r)
+	wd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	r.ServeFiles("/client/*filepath", http.Dir(path.Join(wd, "/client")))
+
+	http.ListenAndServe(":8080", r)
 }
 
 func websocketHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
