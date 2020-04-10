@@ -1,7 +1,9 @@
 package klab
 
 import (
+	"encoding/json"
 	"errors"
+	"log"
 	"math/rand"
 	"strings"
 	"sync"
@@ -10,6 +12,11 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+type ConnMessage struct {
+	Conn    *websocket.Conn
+	Message *Message
+}
+
 type Game struct {
 	code        string
 	playerCount int
@@ -17,6 +24,8 @@ type Game struct {
 	mu      sync.Mutex
 	players []*Player
 	started bool
+	ch      chan *ConnMessage
+	errCh   chan error
 }
 
 func NewGame(code string, playerCount int) (*Game, error) {
@@ -154,6 +163,8 @@ func (g *Game) MaybeStart(conn *websocket.Conn) (bool, error) {
 		}))
 	}
 
+	g.ch = make(chan *ConnMessage)
+	g.errCh = make(chan error)
 	go g.run()
 
 	return true, nil
@@ -183,12 +194,12 @@ func (g *Game) run() {
 		for _, p := range g.players {
 			websocket.JSON.Send(p.conn, MakeMessage("game_scores", GameScoresMessage{
 				PlayerNames: playerNames,
-				Scores: rounds,
+				Scores:      rounds,
 			}))
 		}
 		g.mu.Unlock()
 
-		time.Sleep(5*time.Second)
+		time.Sleep(5 * time.Second)
 
 		g.mu.Lock()
 		for _, p := range g.players {
@@ -198,12 +209,148 @@ func (g *Game) run() {
 		}
 		g.mu.Unlock()
 
-		/*
+		time.Sleep(time.Second)
+
 		deck := NewDeck(false)
 		deck.Shuffle()
-		 */
 
-		time.Sleep(10*time.Second)
+		hands := make(map[string][]Card)
+		extra := make(map[string][]Card)
+
+		g.mu.Lock()
+		for _, p := range g.players {
+			hands[p.name] = append(hands[p.name], deck.Deal(3)...)
+		}
+		for _, p := range g.players {
+			hands[p.name] = append(hands[p.name], deck.Deal(3)...)
+		}
+		cardUp := deck.Deal(1)[0]
+		for _, p := range g.players {
+			extra[p.name] = append(extra[p.name], deck.Deal(2)...)
+		}
+		for _, p := range g.players {
+			websocket.JSON.Send(p.conn, MakeMessage("round_dealt", RoundDealtMessage{
+				PlayerCount: len(g.players),
+				Dealer:      dealer,
+				DeckSize:    deck.Size(),
+				Cards:       hands[p.name],
+				CardUp:      cardUp,
+			}))
+		}
+		g.mu.Unlock()
+
+		time.Sleep(5 * time.Second)
+
+		var trumps Suit
+		var round2 bool
+		toBid := (dealer + 1) % g.playerCount
+
+	BidLoop:
+		for {
+			g.mu.Lock()
+			bidderConn := g.players[toBid].conn
+			g.mu.Unlock()
+
+			websocket.JSON.Send(bidderConn, MakeMessage("bid_request", BidRequestMessage{
+				CardUp: cardUp,
+				Round2: round2,
+				Bimah:  round2 && toBid == dealer,
+			}))
+
+			for m := range g.ch {
+				if m.Message.Type != "bid" {
+					g.errCh <- nil
+					continue
+				}
+				if m.Conn != bidderConn {
+					g.errCh <- errors.New("it's not your turn to bid")
+					continue
+				}
+
+				var bidMessage BidMessage
+				if err := json.Unmarshal(m.Message.Data, &bidMessage); err != nil {
+					g.errCh <- err
+					continue
+				}
+
+				if !round2 {
+					if bidMessage.Pass {
+					} else if Suit(bidMessage.Suit) != cardUp.suit {
+						g.errCh <- errors.New("must pass or take on")
+						continue
+					} else {
+						trumps = cardUp.suit
+						g.errCh <- nil
+						break BidLoop
+					}
+					if toBid == dealer {
+						round2 = true
+					}
+					toBid = (toBid + 1) % g.playerCount
+					g.errCh <- nil
+					continue BidLoop
+				}
+
+				if toBid != dealer {
+					if !bidMessage.Pass {
+						if Suit(bidMessage.Suit) == cardUp.suit {
+							g.errCh <- errors.New("can't take on in that suit")
+							continue
+						}
+
+						trumps = Suit(bidMessage.Suit)
+						g.errCh <- nil
+						break BidLoop
+					}
+
+					toBid = (toBid + 1) % g.playerCount
+					g.errCh <- nil
+					continue BidLoop
+				}
+
+				trumps = Suit(bidMessage.Suit)
+				g.errCh <- nil
+				break BidLoop
+			}
+		}
+
+		g.mu.Lock()
+		for _, p := range g.players {
+			websocket.JSON.Send(p.conn, MakeMessage("trumps", TrumpsMessage{
+				Trumps:     int(trumps),
+				ExtraCards: extra[p.name],
+			}))
+		}
+		g.mu.Unlock()
+
+		for m := range g.ch {
+			log.Println(g.code, m)
+		}
+
+		time.Sleep(10 * time.Second)
 		dealer = (dealer + 1) % g.playerCount
 	}
+}
+
+func (g *Game) MaybePlay(conn *websocket.Conn, msg *Message) (bool, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+
+	var found bool
+	for _, p := range g.players {
+		if p.conn == conn {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return false, nil
+	}
+
+	g.ch <- &ConnMessage{conn, msg}
+	if err := <-g.errCh; err != nil {
+		return false, err
+	}
+
+	return true, nil
 }

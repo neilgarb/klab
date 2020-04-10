@@ -37,6 +37,8 @@ func (m *Manager) Handle(conn *websocket.Conn, msg *Message) error {
 		return m.LeaveGame(conn)
 	case "start_game":
 		return m.StartGame(conn)
+	case "bid":
+		return m.Play(conn, msg)
 	}
 	return errors.New("unknown message type")
 }
@@ -121,6 +123,23 @@ func (m *Manager) StartGame(conn *websocket.Conn) error {
 
 	for _, g := range m.games {
 		ok, err := g.MaybeStart(conn)
+		if err != nil {
+			return err
+		}
+		if ok {
+			break
+		}
+	}
+
+	return nil
+}
+
+func (m *Manager) Play(conn *websocket.Conn, msg *Message) error {
+	m.gamesMu.Lock()
+	defer m.gamesMu.Unlock()
+
+	for _, g := range m.games {
+		ok, err := g.MaybePlay(conn, msg)
 		if err != nil {
 			return err
 		}

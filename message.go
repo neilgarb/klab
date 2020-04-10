@@ -41,6 +41,34 @@ type RoundStartedMessage struct {
 	Dealer int `json:"dealer"`
 }
 
+type RoundDealtMessage struct {
+	PlayerCount int    `json:"player_count"`
+	Dealer      int    `json:"dealer"`
+	DeckSize    int    `json:"deck_size"`
+	Cards       []Card `json:"cards"`
+	CardUp      Card   `json:"card_up"`
+}
+
+type BidRequestMessage struct {
+	CardUp Card `json:"card_up"`
+	Round2 bool `json:"round2"`
+	Bimah  bool `json:"bimah"`
+}
+
+type SpeechMessage struct {
+	Message string `json:"message"`
+}
+
+type BidMessage struct {
+	Pass bool `json:"pass"`
+	Suit int  `json:"suit"`
+}
+
+type TrumpsMessage struct {
+	Trumps     int    `json:"trumps"`
+	ExtraCards []Card `json:"extra_cards"`
+}
+
 func MakeMessage(typ string, data interface{}) *Message {
 	b, err := json.Marshal(data)
 	if err != nil {

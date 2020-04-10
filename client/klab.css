@@ -12,8 +12,7 @@ body, html {
   top: 0; left: 0;
   width: 100%;
   height: 100%;
-  background: url(felt.jpg);
-  background-size: cover;
+  background: green;
   display: flex;
   justify-content: center;
   color: white;
@@ -294,6 +293,7 @@ p {
   flex-direction: column;
   align-items: start;
   width: 100%;
+  position: relative;
 }
 
 .klab-game .header {
@@ -306,10 +306,15 @@ p {
   margin: 20px;
 }
 
-.klab-game .players {
+.klab-game .table {
+  position: relative;
   flex-grow: 1;
   width: 100%;
-  position: relative;
+}
+
+.klab-game .players {
+  width: 100%;
+  height: 100%;
 }
 
 .klab-game .players .player {
@@ -360,4 +365,120 @@ p {
   display: block;
   background: yellow;
   text-align: center;
+}
+
+.klab-game .deck {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 81px;
+  height: 111px;
+  transform: translateX(150px) translateY(-50%);
+}
+
+.klab-game .card_up {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 75px;
+  height: 105px;
+  transform: translateX(65px) translateY(-50%);
+}
+
+.klab-game .bid_options {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 300px;
+  transform: translateX(-270px) translateY(-50%);
+}
+
+.klab-game .trumps {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: rotate(90deg);
+}
+
+.klab-game .trumps-symbol {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  background: url(suit.png) no-repeat left top;
+}
+
+.klab-game .trumps-symbol-1 { background-position: -20px 0; }
+.klab-game .trumps-symbol-2 { background-position: -40px 0; }
+.klab-game .trumps-symbol-3 { background-position: -60px 0; }
+.klab-game .trumps-symbol-4 { background-position: -80px 0; }
+
+.klab-game .card {
+  width: 75px;
+  height: 105px;
+  position: absolute;
+  background: url(cards.png) no-repeat 0 -420px;
+  border-radius: 5px;
+}
+
+.klab-game .card.card-suit-1.card-rank-1 { background-position: 0 0; }
+.klab-game .card.card-suit-1.card-rank-2 { background-position: -75px 0; }
+.klab-game .card.card-suit-1.card-rank-3 { background-position: -150px 0; }
+.klab-game .card.card-suit-1.card-rank-4 { background-position: -225px 0; }
+.klab-game .card.card-suit-1.card-rank-5 { background-position: -300px 0; }
+.klab-game .card.card-suit-1.card-rank-6 { background-position: -375px 0; }
+.klab-game .card.card-suit-1.card-rank-7 { background-position: -450px 0; }
+.klab-game .card.card-suit-1.card-rank-8 { background-position: -525px 0; }
+.klab-game .card.card-suit-2.card-rank-1 { background-position: 0 -105px; }
+.klab-game .card.card-suit-2.card-rank-2 { background-position: -75px -105px; }
+.klab-game .card.card-suit-2.card-rank-3 { background-position: -150px -105px; }
+.klab-game .card.card-suit-2.card-rank-4 { background-position: -225px -105px; }
+.klab-game .card.card-suit-2.card-rank-5 { background-position: -300px -105px; }
+.klab-game .card.card-suit-2.card-rank-6 { background-position: -375px -105px; }
+.klab-game .card.card-suit-2.card-rank-7 { background-position: -450px -105px; }
+.klab-game .card.card-suit-2.card-rank-8 { background-position: -525px -105px; }
+.klab-game .card.card-suit-3.card-rank-1 { background-position: 0 -210px; }
+.klab-game .card.card-suit-3.card-rank-2 { background-position: -75px -210px; }
+.klab-game .card.card-suit-3.card-rank-3 { background-position: -150px -210px; }
+.klab-game .card.card-suit-3.card-rank-4 { background-position: -225px -210px; }
+.klab-game .card.card-suit-3.card-rank-5 { background-position: -300px -210px; }
+.klab-game .card.card-suit-3.card-rank-6 { background-position: -375px -210px; }
+.klab-game .card.card-suit-3.card-rank-7 { background-position: -450px -210px; }
+.klab-game .card.card-suit-3.card-rank-8 { background-position: -525px -210px; }
+.klab-game .card.card-suit-4.card-rank-1 { background-position: 0 -315px; }
+.klab-game .card.card-suit-4.card-rank-2 { background-position: -75px -315px; }
+.klab-game .card.card-suit-4.card-rank-3 { background-position: -150px -315px; }
+.klab-game .card.card-suit-4.card-rank-4 { background-position: -225px -315px; }
+.klab-game .card.card-suit-4.card-rank-5 { background-position: -300px -315px; }
+.klab-game .card.card-suit-4.card-rank-6 { background-position: -375px -315px; }
+.klab-game .card.card-suit-4.card-rank-7 { background-position: -450px -315px; }
+.klab-game .card.card-suit-4.card-rank-8 { background-position: -525px -315px; }
+
+.klab-game .player .cards {
+  padding: 10px 0 10px 20px;
+}
+
+.klab-game .player .cards .card {
+  position: relative;
+  display: inline-block;
+  margin: 0 -20px 5px 0;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+  transform: rotate(-20deg);
+  transition: .2s all;
+}
+
+.klab-game .player .cards .card.up:hover {
+  transform: translateY(-20px);
+}
+
+.klab-game .card.up {
+}
+
+.klab-game .card.up.card-suit-1,
+.klab-game .card.up.card-suit-2 {
+  color: red;
+}
+
+.klab-game .card.up.card-suit-3,
+.klab-game .card.up.card-suit-4 {
+  color: black;
 }

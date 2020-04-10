@@ -1,12 +1,14 @@
 package klab
 
+import "encoding/json"
+
 type Suit int
 
 const (
 	SuitUnknown  Suit = 0
-	SuitHearts   Suit = 1
+	SuitClubs    Suit = 1
 	SuitDiamonds Suit = 2
-	SuitClubs    Suit = 3
+	SuitHearts   Suit = 3
 	SuitSpades   Suit = 4
 )
 
@@ -47,10 +49,17 @@ func AllRanks() []Rank {
 }
 
 type Card struct {
-	suit Suit
-	rank Rank
+	suit Suit `json:"suit"`
+	rank Rank `json:"rank"`
 }
 
 func NewCard(suit Suit, rank Rank) Card {
-	return Card{suit,rank}
+	return Card{suit, rank}
+}
+
+func (c Card) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct{
+		Suit int `json:"suit"`
+		Rank int `json:"rank"`
+	}{int(c.suit), int(c.rank)})
 }
