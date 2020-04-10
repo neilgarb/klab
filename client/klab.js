@@ -443,6 +443,8 @@ async function dealRound(myIdx, data) {
       });
     }
   }
+
+  sortCards();
 }
 
 function showBidOptions(data) {
@@ -498,8 +500,24 @@ async function setTrumps(data) {
       }, 200);
     });
   }
+
+  sortCards();
+
   let $trumps = $klab.find('.trumps');
   $trumps.show().html(`Trumps: <span class="trumps-symbol trumps-symbol-${data.trumps}"></span>`);
+}
+
+function sortCards() {
+  let $myCards = $klab.find('.player1 .cards');
+  $myCards.find('.card').detach().sort((a, b) => {
+    if ($(a).hasClass('up') === $(b).hasClass('up')) {
+      if (+$(a).attr('data-suit') === +$(b).attr('data-suit')) {
+        return +$(a).attr('data-rank') < +$(b).attr('data-rank') ? -1 : 1;
+      }
+      return +$(a).attr('data-suit') < +$(b).attr('data-suit') ? -1 : 1;
+    }
+    return $(a).hasClass('up') ? -1 : 1;
+  }).appendTo($myCards);
 }
 
 function makeCard(suit, rank) {
@@ -508,9 +526,7 @@ function makeCard(suit, rank) {
   }
 
   return $(`
-<div class="card up card-suit-${suit} card-rank-${rank}">
-  <span class="suit"></span>
-  <span class="rank"></span>
+<div class="card up" data-suit="${suit}" data-rank="${rank}">
 </div>`);
 }
 

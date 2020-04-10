@@ -420,38 +420,38 @@ p {
   border-radius: 5px;
 }
 
-.klab-game .card.card-suit-1.card-rank-1 { background-position: 0 0; }
-.klab-game .card.card-suit-1.card-rank-2 { background-position: -75px 0; }
-.klab-game .card.card-suit-1.card-rank-3 { background-position: -150px 0; }
-.klab-game .card.card-suit-1.card-rank-4 { background-position: -225px 0; }
-.klab-game .card.card-suit-1.card-rank-5 { background-position: -300px 0; }
-.klab-game .card.card-suit-1.card-rank-6 { background-position: -375px 0; }
-.klab-game .card.card-suit-1.card-rank-7 { background-position: -450px 0; }
-.klab-game .card.card-suit-1.card-rank-8 { background-position: -525px 0; }
-.klab-game .card.card-suit-2.card-rank-1 { background-position: 0 -105px; }
-.klab-game .card.card-suit-2.card-rank-2 { background-position: -75px -105px; }
-.klab-game .card.card-suit-2.card-rank-3 { background-position: -150px -105px; }
-.klab-game .card.card-suit-2.card-rank-4 { background-position: -225px -105px; }
-.klab-game .card.card-suit-2.card-rank-5 { background-position: -300px -105px; }
-.klab-game .card.card-suit-2.card-rank-6 { background-position: -375px -105px; }
-.klab-game .card.card-suit-2.card-rank-7 { background-position: -450px -105px; }
-.klab-game .card.card-suit-2.card-rank-8 { background-position: -525px -105px; }
-.klab-game .card.card-suit-3.card-rank-1 { background-position: 0 -210px; }
-.klab-game .card.card-suit-3.card-rank-2 { background-position: -75px -210px; }
-.klab-game .card.card-suit-3.card-rank-3 { background-position: -150px -210px; }
-.klab-game .card.card-suit-3.card-rank-4 { background-position: -225px -210px; }
-.klab-game .card.card-suit-3.card-rank-5 { background-position: -300px -210px; }
-.klab-game .card.card-suit-3.card-rank-6 { background-position: -375px -210px; }
-.klab-game .card.card-suit-3.card-rank-7 { background-position: -450px -210px; }
-.klab-game .card.card-suit-3.card-rank-8 { background-position: -525px -210px; }
-.klab-game .card.card-suit-4.card-rank-1 { background-position: 0 -315px; }
-.klab-game .card.card-suit-4.card-rank-2 { background-position: -75px -315px; }
-.klab-game .card.card-suit-4.card-rank-3 { background-position: -150px -315px; }
-.klab-game .card.card-suit-4.card-rank-4 { background-position: -225px -315px; }
-.klab-game .card.card-suit-4.card-rank-5 { background-position: -300px -315px; }
-.klab-game .card.card-suit-4.card-rank-6 { background-position: -375px -315px; }
-.klab-game .card.card-suit-4.card-rank-7 { background-position: -450px -315px; }
-.klab-game .card.card-suit-4.card-rank-8 { background-position: -525px -315px; }
+.klab-game .card[data-suit="1"][data-rank="1"] { background-position: 0 0; }
+.klab-game .card[data-suit="1"][data-rank="2"] { background-position: -75px 0; }
+.klab-game .card[data-suit="1"][data-rank="3"] { background-position: -150px 0; }
+.klab-game .card[data-suit="1"][data-rank="4"] { background-position: -225px 0; }
+.klab-game .card[data-suit="1"][data-rank="5"] { background-position: -300px 0; }
+.klab-game .card[data-suit="1"][data-rank="6"] { background-position: -375px 0; }
+.klab-game .card[data-suit="1"][data-rank="7"] { background-position: -450px 0; }
+.klab-game .card[data-suit="1"][data-rank="8"] { background-position: -525px 0; }
+.klab-game .card[data-suit="2"][data-rank="1"] { background-position: 0 -105px; }
+.klab-game .card[data-suit="2"][data-rank="2"] { background-position: -75px -105px; }
+.klab-game .card[data-suit="2"][data-rank="3"] { background-position: -150px -105px; }
+.klab-game .card[data-suit="2"][data-rank="4"] { background-position: -225px -105px; }
+.klab-game .card[data-suit="2"][data-rank="5"] { background-position: -300px -105px; }
+.klab-game .card[data-suit="2"][data-rank="6"] { background-position: -375px -105px; }
+.klab-game .card[data-suit="2"][data-rank="7"] { background-position: -450px -105px; }
+.klab-game .card[data-suit="2"][data-rank="8"] { background-position: -525px -105px; }
+.klab-game .card[data-suit="3"][data-rank="1"] { background-position: 0 -210px; }
+.klab-game .card[data-suit="3"][data-rank="2"] { background-position: -75px -210px; }
+.klab-game .card[data-suit="3"][data-rank="3"] { background-position: -150px -210px; }
+.klab-game .card[data-suit="3"][data-rank="4"] { background-position: -225px -210px; }
+.klab-game .card[data-suit="3"][data-rank="5"] { background-position: -300px -210px; }
+.klab-game .card[data-suit="3"][data-rank="6"] { background-position: -375px -210px; }
+.klab-game .card[data-suit="3"][data-rank="7"] { background-position: -450px -210px; }
+.klab-game .card[data-suit="3"][data-rank="8"] { background-position: -525px -210px; }
+.klab-game .card[data-suit="4"][data-rank="1"] { background-position: 0 -315px; }
+.klab-game .card[data-suit="4"][data-rank="2"] { background-position: -75px -315px; }
+.klab-game .card[data-suit="4"][data-rank="3"] { background-position: -150px -315px; }
+.klab-game .card[data-suit="4"][data-rank="4"] { background-position: -225px -315px; }
+.klab-game .card[data-suit="4"][data-rank="5"] { background-position: -300px -315px; }
+.klab-game .card[data-suit="4"][data-rank="6"] { background-position: -375px -315px; }
+.klab-game .card[data-suit="4"][data-rank="7"] { background-position: -450px -315px; }
+.klab-game .card[data-suit="4"][data-rank="8"] { background-position: -525px -315px; }
 
 .klab-game .player .cards {
   padding: 10px 0 10px 20px;
