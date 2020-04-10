@@ -322,15 +322,9 @@ p {
   background: rgba(139, 69, 19, 0.5);
 }
 
-.klab-game .players .player .dealer-pos {
-  position: absolute;
-  left: 0;
-  top: 0;
-}
-
 .klab-game .players .player1 {
   width: 50%;
-  height: 25%;
+  height: 180px;
   left: 25%;
   bottom: 0;
 }
@@ -344,7 +338,7 @@ p {
 
 .klab-game .players .player3 {
   width: 50%;
-  height: 25%;
+  height: 180px;
   left: 25%;
   top: 0;
 }
@@ -358,6 +352,12 @@ p {
 
 .klab-game .dealer {
   position: absolute;
+}
+
+.klab-game .speech {
+  position: absolute;
+  background: white;
+  color: black;
 }
 
 .klab-game .dealer span {

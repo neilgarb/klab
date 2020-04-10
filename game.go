@@ -281,13 +281,39 @@ func (g *Game) run() {
 					} else {
 						trumps = cardUp.suit
 						g.errCh <- nil
+
+						g.mu.Lock()
+						for _, p := range g.players {
+							if p.conn == bidderConn {
+								continue
+							}
+							websocket.JSON.Send(p.conn, MakeMessage("speech", SpeechMessage{
+								Player:  toBid,
+								Message: "Play",
+							}))
+						}
+						g.mu.Unlock()
+
 						break BidLoop
 					}
 					if toBid == dealer {
 						round2 = true
 					}
-					toBid = (toBid + 1) % g.playerCount
 					g.errCh <- nil
+
+					g.mu.Lock()
+					for _, p := range g.players {
+						if p.conn == bidderConn {
+							continue
+						}
+						websocket.JSON.Send(p.conn, MakeMessage("speech", SpeechMessage{
+							Player:  toBid,
+							Message: "Pass",
+						}))
+					}
+					g.mu.Unlock()
+
+					toBid = (toBid + 1) % g.playerCount
 					continue BidLoop
 				}
 
@@ -300,11 +326,37 @@ func (g *Game) run() {
 
 						trumps = Suit(bidMessage.Suit)
 						g.errCh <- nil
+
+						g.mu.Lock()
+						for _, p := range g.players {
+							if p.conn == bidderConn {
+								continue
+							}
+							websocket.JSON.Send(p.conn, MakeMessage("speech", SpeechMessage{
+								Player:  toBid,
+								Message: trumps.String(),
+							}))
+						}
+						g.mu.Unlock()
+
 						break BidLoop
 					}
 
-					toBid = (toBid + 1) % g.playerCount
 					g.errCh <- nil
+
+					g.mu.Lock()
+					for _, p := range g.players {
+						if p.conn == bidderConn {
+							continue
+						}
+						websocket.JSON.Send(p.conn, MakeMessage("speech", SpeechMessage{
+							Player:  toBid,
+							Message: "Pass",
+						}))
+					}
+					g.mu.Unlock()
+
+					toBid = (toBid + 1) % g.playerCount
 					continue BidLoop
 				}
 

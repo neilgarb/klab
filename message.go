@@ -56,6 +56,7 @@ type BidRequestMessage struct {
 }
 
 type SpeechMessage struct {
+	Player  int    `json:"player"`
 	Message string `json:"message"`
 }
 

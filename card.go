@@ -12,6 +12,22 @@ const (
 	SuitSpades   Suit = 4
 )
 
+func (s Suit) String() string {
+	switch s {
+	case SuitUnknown:
+		return "No trumps"
+	case SuitClubs:
+		return "Clubs"
+	case SuitDiamonds:
+		return "Diamonds"
+	case SuitHearts:
+		return "Hearts"
+	case SuitSpades:
+		return "Spades"
+	}
+	return "Unknown"
+}
+
 func AllSuits() []Suit {
 	return []Suit{
 		SuitHearts,

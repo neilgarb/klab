@@ -303,6 +303,7 @@ function showGame(data) {
   <div class="dealer" style="display: none;">
     <span>Dealer</span> 
   </div>
+  <div class="speech" style="display: none"></div>
 </div>
 `);
     $players.append($player);
@@ -326,6 +327,9 @@ function showGame(data) {
         break;
       case 'trumps':
         setTrumps(msg.data);
+        break;
+      case 'speech':
+        showSpeech(positions, msg.data);
         break;
       case 'error':
         showError(msg.data);
@@ -518,6 +522,21 @@ function sortCards() {
     }
     return $(a).hasClass('up') ? -1 : 1;
   }).appendTo($myCards);
+}
+
+function showSpeech(positions, data) {
+  for (let i in positions) {
+    if (positions[i] !== data.player) {
+      continue;
+    }
+
+    let idx = +i + 1;
+    let find = '.player' + idx + ' .speech';
+    let $speech = $klab.find(find).html(data.message).show();
+    setTimeout(function() {
+      $speech.hide();
+    }, 3000);
+  }
 }
 
 function makeCard(suit, rank) {
