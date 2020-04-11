@@ -3,6 +3,7 @@ package klab
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"math/rand"
 	"strings"
 	"sync"
@@ -402,7 +403,6 @@ func (g *Game) run() {
 
 				websocket.JSON.Send(playerConn, MakeMessage("your_turn", YourTurnMessage{}))
 
-				var canOverTrump bool
 				var maxTrickTrump int
 				for _, t := range trick {
 					if t.suit != trumps {
@@ -411,47 +411,38 @@ func (g *Game) run() {
 					if t.rank.TrumpRank() > maxTrickTrump {
 						maxTrickTrump = t.rank.TrumpRank()
 					}
-					for _, c := range hands[playerName] {
-						if c.suit != trumps {
-							continue
-						}
-						if c.rank.TrumpRank() > t.rank.TrumpRank() {
-							canOverTrump = true
-						}
-					}
-				}
-
-				var haveTrumps bool
-				for _, c := range hands[playerName] {
-					if trumps != SuitUnknown && c.suit == trumps {
-						haveTrumps = true
-						break
-					}
 				}
 
 				canPlay := make(map[Card]bool)
-				for _, c := range hands[playerName] {
-					if len(trick) == 0 {
+				if len(trick) == 0 {
+					for _, c := range hands[playerName] {
 						canPlay[c] = true
-					} else if c.suit == trick[0].suit {
-						canPlay[c] = true
-					} else if trumps == SuitUnknown {
-						canPlay[c] = true
-					} else if c.suit == trumps {
-						// card must higher than any trumps already played
-						if maxTrickTrump > 0 && !canOverTrump {
-							canPlay[c] = true
-						} else if c.rank.TrumpRank() > maxTrickTrump {
+					}
+				} else {
+					for _, c := range hands[playerName] {
+						if c.suit == trick[0].suit {
 							canPlay[c] = true
 						}
-					} else {
-						if !haveTrumps {
-							canPlay[c] = true
-						} else if maxTrickTrump > 0 && !canOverTrump {
+					}
+
+					if len(canPlay) == 0 {
+						for _, c := range hands[playerName] {
+							if c.suit == trumps {
+								if maxTrickTrump == 0 || c.rank.TrumpRank() > maxTrickTrump {
+									canPlay[c] = true
+								}
+							}
+						}
+					}
+
+					if len(canPlay) == 0 {
+						for _, c := range hands[playerName] {
 							canPlay[c] = true
 						}
 					}
 				}
+
+				log.Println(canPlay)
 
 				for m := range g.ch {
 					if m.Message.Type != "play" {
@@ -516,8 +507,9 @@ func (g *Game) run() {
 						bestPlayer = i
 						continue
 					}
+					continue
 				}
-				if c.suit == bestCard.suit && c.rank > bestCard.rank {
+				if c.suit == bestCard.suit && c.rank.NonTrumpRank() > bestCard.rank.NonTrumpRank() {
 					bestCard = c
 					bestPlayer = i
 					continue
@@ -631,6 +623,7 @@ func (g *Game) run() {
 		g.mu.Lock()
 		for _, p := range g.players {
 			round = append(round, roundScores[p.name])
+			scores[p.name] += roundScores[p.name]
 		}
 		g.mu.Unlock()
 		rounds = append(rounds, round)

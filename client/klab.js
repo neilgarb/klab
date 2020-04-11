@@ -595,6 +595,13 @@ function showTrick(positions, data) {
     }
     $trick.append($card);
   }
+
+  let removeCardPlayer = (data.first_player + data.cards.length - 1) % data.player_count;
+  for (let j in positions) {
+    if (positions[j] === removeCardPlayer && j > 0) {
+      $klab.find('.player' + (+j+1) + ' .card').eq(0).remove();
+    }
+  }
 }
 
 function showTrickWon(positions, data) {

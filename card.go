@@ -73,17 +73,39 @@ func (r Rank) String() string {
 	return "Unknown"
 }
 
+func (r Rank) NonTrumpRank() int {
+	switch r {
+	case RankSeven:
+		return 1
+	case RankEight:
+		return 2
+	case RankNine:
+		return 3
+	case RankJack:
+		return 4
+	case RankQueen:
+		return 5
+	case RankKing:
+		return 6
+	case RankTen:
+		return 7
+	case RankAce:
+		return 8
+	}
+	return 0
+}
+
 func (r Rank) TrumpRank() int {
 	switch r {
 	case RankSeven:
 		return 1
 	case RankEight:
 		return 2
-	case RankTen:
-		return 3
 	case RankQueen:
-		return 4
+		return 3
 	case RankKing:
+		return 4
+	case RankTen:
 		return 5
 	case RankAce:
 		return 6
@@ -115,6 +137,10 @@ type Card struct {
 
 func NewCard(suit Suit, rank Rank) Card {
 	return Card{suit, rank}
+}
+
+func (c Card) String() string {
+	return c.rank.String() + c.suit.String()
 }
 
 type suitDTO struct {
