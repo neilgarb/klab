@@ -9,7 +9,6 @@ function init() {
   $error = $('#error');
   $scores = $('#scores');
   connect();
-  showHome();
 }
 
 function connect() {
@@ -17,6 +16,7 @@ function connect() {
   ws.onopen = function() {
     console.log('ws open');
     $overlay.hide();
+    showHome();
   };
   ws.onclose = function() {
     console.log('ws close');
@@ -578,7 +578,7 @@ function showTrick(positions, data) {
   $trick.html('');
   for (let i in data.cards) {
     let $card = makeCard(data.cards[i].suit, data.cards[i].rank);
-    let pos = (+i + data.dealer + 1) % data.player_count;
+    let pos = (+i + data.first_player) % data.player_count;
     for (let j in positions) {
       if (positions[j] === pos) {
         $card.addClass('trick-player' + (+j+1));
@@ -590,9 +590,8 @@ function showTrick(positions, data) {
 }
 
 function showTrickWon(positions, data) {
-  let winner = (data.dealer + 1 + data.winner) % data.player_count;
   for (let j in positions) {
-    if (positions[j] === winner) {
+    if (positions[j] === (data.first_player + data.winner) % data.player_count)  {
       let screenWidth = $(window).width();
       let screenHeight = $(window).height();
 

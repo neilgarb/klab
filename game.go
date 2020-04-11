@@ -376,6 +376,8 @@ func (g *Game) run() {
 		}
 		g.mu.Unlock()
 
+		time.Sleep(time.Second)
+
 		for k, v := range extra {
 			for _, vv := range v {
 				hands[k] = append(hands[k], vv)
@@ -487,7 +489,7 @@ func (g *Game) run() {
 					for _, p := range g.players {
 						websocket.JSON.Send(p.conn, MakeMessage("trick", TrickMessage{
 							PlayerCount: g.playerCount,
-							Dealer:      dealer,
+							FirstPlayer: toPlay,
 							Cards:       trick,
 						}))
 					}
@@ -498,24 +500,24 @@ func (g *Game) run() {
 			}
 
 			// Everyone's played their cards. Who wins?
-			bestPlayer := (dealer + 1) % g.playerCount
-			bestCard := trick[0]
+			bestPlayer := 0
+			bestCard := trick[bestPlayer]
 			for i := 1; i < len(trick); i++ {
 				c := trick[i]
 				if c.suit == trumps {
 					if bestCard.suit != trumps {
 						bestCard = c
-						bestPlayer = (dealer + 1 + i) % g.playerCount
+						bestPlayer = i
 						continue
 					} else if c.rank.TrumpRank() > bestCard.rank.TrumpRank() {
 						bestCard = c
-						bestPlayer = (dealer + 1 + i) % g.playerCount
+						bestPlayer = i
 						continue
 					}
 				}
 				if c.suit == bestCard.suit && c.rank > bestCard.rank {
 					bestCard = c
-					bestPlayer = (dealer + 1 + i) % g.playerCount
+					bestPlayer = i
 					continue
 				}
 			}
@@ -528,13 +530,14 @@ func (g *Game) run() {
 			for _, p := range g.players {
 				websocket.JSON.Send(p.conn, MakeMessage("trick_won", TrickWonMessage{
 					PlayerCount: g.playerCount,
-					Dealer:      dealer,
+					FirstPlayer: toPlay,
 					Winner:      bestPlayer,
 				}))
 			}
 			g.mu.Unlock()
 
 			trick = nil
+			toPlay = (toPlay + bestPlayer) % g.playerCount
 		}
 
 		for m := range g.ch {

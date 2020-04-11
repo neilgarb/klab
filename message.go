@@ -79,13 +79,13 @@ type PlayMessage struct {
 
 type TrickMessage struct {
 	PlayerCount int    `json:"player_count"`
-	Dealer      int    `json:"dealer"`
+	FirstPlayer int    `json:"first_player"`
 	Cards       []Card `json:"cards"`
 }
 
 type TrickWonMessage struct {
 	PlayerCount int `json:"player_count"`
-	Dealer      int `json:"dealer"`
+	FirstPlayer int `json:"first_player"`
 	Winner      int `json:"winner"`
 }
 
