@@ -199,7 +199,8 @@ func (g *Game) run() {
 		}
 		g.mu.Unlock()
 
-		time.Sleep(5 * time.Second)
+		// time.Sleep(5 * time.Second)
+		time.Sleep(time.Second)
 
 		g.mu.Lock()
 		for _, p := range g.players {
@@ -374,6 +375,167 @@ func (g *Game) run() {
 			}))
 		}
 		g.mu.Unlock()
+
+		for k, v := range extra {
+			for _, vv := range v {
+				hands[k] = append(hands[k], vv)
+			}
+		}
+		extra = nil
+
+		wonCards := make(map[string][]Card)
+
+		toPlay := (dealer + 1) % g.playerCount
+		for i := 0; i < 8; i++ {
+
+			trick := make([]Card, 0, g.playerCount)
+
+			for j := 0; j < g.playerCount; j++ {
+				g.mu.Lock()
+				playerConn := g.players[(toPlay+j)%g.playerCount].conn
+				playerName := g.players[(toPlay+j)%g.playerCount].name
+				g.mu.Unlock()
+
+				websocket.JSON.Send(playerConn, MakeMessage("your_turn", YourTurnMessage{}))
+
+				var canOverTrump bool
+				var maxTrickTrump int
+				for _, t := range trick {
+					if t.suit != trumps {
+						continue
+					}
+					if t.rank.TrumpRank() > maxTrickTrump {
+						maxTrickTrump = t.rank.TrumpRank()
+					}
+					for _, c := range hands[playerName] {
+						if c.suit != trumps {
+							continue
+						}
+						if c.rank.TrumpRank() > t.rank.TrumpRank() {
+							canOverTrump = true
+						}
+					}
+				}
+
+				var haveTrumps bool
+				for _, c := range hands[playerName] {
+					if trumps != SuitUnknown && c.suit == trumps {
+						haveTrumps = true
+						break
+					}
+				}
+
+				canPlay := make(map[Card]bool)
+				for _, c := range hands[playerName] {
+					if len(trick) == 0 {
+						canPlay[c] = true
+					} else if c.suit == trick[0].suit {
+						canPlay[c] = true
+					} else if trumps == SuitUnknown {
+						canPlay[c] = true
+					} else if c.suit == trumps {
+						// card must higher than any trumps already played
+						if maxTrickTrump > 0 && !canOverTrump {
+							canPlay[c] = true
+						} else if c.rank.TrumpRank() > maxTrickTrump {
+							canPlay[c] = true
+						}
+					} else {
+						if !haveTrumps {
+							canPlay[c] = true
+						} else if maxTrickTrump > 0 && !canOverTrump {
+							canPlay[c] = true
+						}
+					}
+				}
+
+				for m := range g.ch {
+					if m.Message.Type != "play" {
+						g.errCh <- nil
+						continue
+					}
+
+					if m.Conn != playerConn {
+						g.errCh <- errors.New("it's not your turn")
+						continue
+					}
+
+					var playMessage PlayMessage
+					if err := json.Unmarshal(m.Message.Data, &playMessage); err != nil {
+						g.errCh <- err
+						continue
+					}
+
+					if !canPlay[playMessage.Card] {
+						g.errCh <- errors.New("can't play that card")
+						continue
+					}
+
+					g.errCh <- nil
+
+					trick = append(trick, playMessage.Card)
+					newHand := make([]Card, 0, len(hands[playerName])-1)
+					for _, c := range hands[playerName] {
+						if c == playMessage.Card {
+							continue
+						}
+						newHand = append(newHand, c)
+					}
+					hands[playerName] = newHand
+
+					g.mu.Lock()
+					for _, p := range g.players {
+						websocket.JSON.Send(p.conn, MakeMessage("trick", TrickMessage{
+							PlayerCount: g.playerCount,
+							Dealer:      dealer,
+							Cards:       trick,
+						}))
+					}
+					g.mu.Unlock()
+
+					break
+				}
+			}
+
+			// Everyone's played their cards. Who wins?
+			bestPlayer := (dealer + 1) % g.playerCount
+			bestCard := trick[0]
+			for i := 1; i < len(trick); i++ {
+				c := trick[i]
+				if c.suit == trumps {
+					if bestCard.suit != trumps {
+						bestCard = c
+						bestPlayer = (dealer + 1 + i) % g.playerCount
+						continue
+					} else if c.rank.TrumpRank() > bestCard.rank.TrumpRank() {
+						bestCard = c
+						bestPlayer = (dealer + 1 + i) % g.playerCount
+						continue
+					}
+				}
+				if c.suit == bestCard.suit && c.rank > bestCard.rank {
+					bestCard = c
+					bestPlayer = (dealer + 1 + i) % g.playerCount
+					continue
+				}
+			}
+
+			time.Sleep(2 * time.Second)
+
+			g.mu.Lock()
+			wonCards[g.players[bestPlayer].name] = append(
+				wonCards[g.players[bestPlayer].name], trick...)
+			for _, p := range g.players {
+				websocket.JSON.Send(p.conn, MakeMessage("trick_won", TrickWonMessage{
+					PlayerCount: g.playerCount,
+					Dealer:      dealer,
+					Winner:      bestPlayer,
+				}))
+			}
+			g.mu.Unlock()
+
+			trick = nil
+		}
 
 		for m := range g.ch {
 			log.Println(g.code, m)

@@ -4,6 +4,7 @@ import (
 	"flag"
 	"math/rand"
 	"net/http"
+	"net/http/pprof"
 	"os"
 	"path"
 	"time"
@@ -21,6 +22,13 @@ func main() {
 	r := httprouter.New()
 
 	r.GET("/ws", websocketHandler)
+	r.HandlerFunc("GET", "/debug/pprof/profile", pprof.Profile)
+	r.HandlerFunc("GET", "/debug/pprof/symbol", pprof.Symbol)
+	r.HandlerFunc("GET", "/debug/pprof/", pprof.Index)
+	r.HandlerFunc("GET", "/debug/pprof/block", pprof.Index)
+	r.HandlerFunc("GET", "/debug/pprof/goroutine", pprof.Index)
+	r.HandlerFunc("GET", "/debug/pprof/heap", pprof.Index)
+	r.HandlerFunc("GET", "/debug/pprof/threadcreate", pprof.Index)
 
 	wd, err := os.Getwd()
 	if err != nil {

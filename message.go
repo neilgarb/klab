@@ -70,6 +70,25 @@ type TrumpsMessage struct {
 	ExtraCards []Card `json:"extra_cards"`
 }
 
+type YourTurnMessage struct {
+}
+
+type PlayMessage struct {
+	Card Card `json:"card"`
+}
+
+type TrickMessage struct {
+	PlayerCount int    `json:"player_count"`
+	Dealer      int    `json:"dealer"`
+	Cards       []Card `json:"cards"`
+}
+
+type TrickWonMessage struct {
+	PlayerCount int `json:"player_count"`
+	Dealer      int `json:"dealer"`
+	Winner      int `json:"winner"`
+}
+
 func MakeMessage(typ string, data interface{}) *Message {
 	b, err := json.Marshal(data)
 	if err != nil {

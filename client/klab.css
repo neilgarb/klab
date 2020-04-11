@@ -360,6 +360,10 @@ p {
   color: black;
 }
 
+.klab-game .your_turn {
+  position: absolute;
+}
+
 .klab-game .dealer span {
   color: black;
   display: block;
@@ -393,6 +397,24 @@ p {
   transform: translateX(-270px) translateY(-50%);
 }
 
+.klab-game .trick {
+  position: absolute;
+  height: 105px;
+  width: 75px;
+  top: 50%;
+  left: 50%;
+  transform: translateX(-170px) translateY(-50%);
+}
+
+.klab-game .card {
+  transition: .5s all;
+}
+
+.klab-game .trick .card.trick-player1 { transform: translateY(85px); }
+.klab-game .trick .card.trick-player2 { transform: translateX(55px); }
+.klab-game .trick .card.trick-player3 { transform: translateY(-85px); }
+.klab-game .trick .card.trick-player4 { transform: translateX(-55px); }
+
 .klab-game .trumps {
   position: absolute;
   top: 50%;
@@ -418,6 +440,7 @@ p {
   position: absolute;
   background: url(cards.png) no-repeat 0 -420px;
   border-radius: 5px;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
 }
 
 .klab-game .card[data-suit="1"][data-rank="1"] { background-position: 0 0; }
@@ -461,13 +484,12 @@ p {
   position: relative;
   display: inline-block;
   margin: 0 -20px 5px 0;
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
-  transform: rotate(-20deg);
   transition: .2s all;
 }
 
-.klab-game .player .cards .card.up:hover {
+.klab-game .player.your_turn .cards .card.up:hover {
   transform: translateY(-20px);
+  cursor: pointer;
 }
 
 .klab-game .card.up {

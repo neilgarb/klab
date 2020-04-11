@@ -51,6 +51,50 @@ const (
 	RankAce     Rank = 8
 )
 
+func (r Rank) String() string {
+	switch r {
+	case RankSeven:
+		return "7"
+	case RankEight:
+		return "8"
+	case RankNine:
+		return "9"
+	case RankTen:
+		return "10"
+	case RankJack:
+		return "J"
+	case RankQueen:
+		return "Q"
+	case RankKing:
+		return "K"
+	case RankAce:
+		return "A"
+	}
+	return "Unknown"
+}
+
+func (r Rank) TrumpRank() int {
+	switch r {
+	case RankSeven:
+		return 1
+	case RankEight:
+		return 2
+	case RankTen:
+		return 3
+	case RankQueen:
+		return 4
+	case RankKing:
+		return 5
+	case RankAce:
+		return 6
+	case RankNine:
+		return 7
+	case RankJack:
+		return 8
+	}
+	return 0
+}
+
 func AllRanks() []Rank {
 	return []Rank{
 		RankSeven,
@@ -65,17 +109,28 @@ func AllRanks() []Rank {
 }
 
 type Card struct {
-	suit Suit `json:"suit"`
-	rank Rank `json:"rank"`
+	suit Suit
+	rank Rank
 }
 
 func NewCard(suit Suit, rank Rank) Card {
 	return Card{suit, rank}
 }
 
+type suitDTO struct {
+	Suit int `json:"suit"`
+	Rank int `json:"rank"`
+}
+
 func (c Card) MarshalJSON() ([]byte, error) {
-	return json.Marshal(struct{
-		Suit int `json:"suit"`
-		Rank int `json:"rank"`
-	}{int(c.suit), int(c.rank)})
+	return json.Marshal(suitDTO{int(c.suit), int(c.rank)})
+}
+
+func (c *Card) UnmarshalJSON(b []byte) error {
+	var d suitDTO
+	if err := json.Unmarshal(b, &d); err != nil {
+		return err
+	}
+	*c = Card{Suit(d.Suit), Rank(d.Rank)}
+	return nil
 }

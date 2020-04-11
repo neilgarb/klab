@@ -263,7 +263,8 @@ function showGame(data) {
     </div>
     <div class="deck"></div>
     <div class="card_up"></div>
-    <div class="bid_options"></div>
+    <div class="bid_options" style="display: none;"></div>
+    <div class="trick" style="display: none"></div>
     <div class="trumps"></div>
   </div>
 </div>
@@ -304,6 +305,7 @@ function showGame(data) {
     <span>Dealer</span> 
   </div>
   <div class="speech" style="display: none"></div>
+  <div class="your_turn" style="display: none;">Your turn</div>
 </div>
 `);
     $players.append($player);
@@ -330,6 +332,15 @@ function showGame(data) {
         break;
       case 'speech':
         showSpeech(positions, msg.data);
+        break;
+      case 'your_turn':
+        showYourTurn(msg.data);
+        break;
+      case 'trick':
+        showTrick(positions, msg.data);
+        break;
+      case 'trick_won':
+        showTrickWon(positions, msg.data);
         break;
       case 'error':
         showError(msg.data);
@@ -388,7 +399,7 @@ async function dealRound(myIdx, data) {
 
     let offset = i*2;
     if (offset>6) {
-      offset = 6;
+      continue
     }
 
     $card.css('left', '' + offset + 'px');
@@ -452,7 +463,7 @@ async function dealRound(myIdx, data) {
 }
 
 function showBidOptions(data) {
-  let $bidOptions = $klab.find('.bid_options');
+  let $bidOptions = $klab.find('.bid_options').show();
   if (!data.round2) {
     $bidOptions.html(`
 <button class="button play">Play</button>
@@ -494,6 +505,7 @@ function showBidOptions(data) {
 }
 
 async function setTrumps(data) {
+  $klab.find('.bid_options').hide();
   let $cards = $klab.find('.player1 .cards');
   $cards.find('.card:gt(5)').remove();
   for (let c of data.extra_cards) {
@@ -536,6 +548,76 @@ function showSpeech(positions, data) {
     setTimeout(function() {
       $speech.hide();
     }, 3000);
+  }
+}
+
+function showYourTurn(data) {
+  let $player = $klab.find('.player1');
+  $player.find('.your_turn').show();
+  $player.addClass('your_turn');
+
+  $player.find('.card.up').click(function(e) {
+    e.preventDefault();
+    let card = {
+      suit: +($(this).attr('data-suit')),
+      rank: +($(this).attr('data-rank'))
+    };
+    sendMessage('play', {
+      card: card,
+    });
+    $(this).remove();
+  });
+}
+
+function showTrick(positions, data) {
+  let $player = $klab.find('.player1');
+  $player.find('.your_turn').hide();
+  $player.find('.card.up').off('click');
+  $player.removeClass('your_turn');
+  let $trick = $klab.find('.trick').show();
+  $trick.html('');
+  for (let i in data.cards) {
+    let $card = makeCard(data.cards[i].suit, data.cards[i].rank);
+    let pos = (+i + data.dealer + 1) % data.player_count;
+    for (let j in positions) {
+      if (positions[j] === pos) {
+        $card.addClass('trick-player' + (+j+1));
+        break;
+      }
+    }
+    $trick.append($card);
+  }
+}
+
+function showTrickWon(positions, data) {
+  let winner = (data.dealer + 1 + data.winner) % data.player_count;
+  for (let j in positions) {
+    if (positions[j] === winner) {
+      let screenWidth = $(window).width();
+      let screenHeight = $(window).height();
+
+      let targetX, targetY;
+      if (+j === 0) {
+        targetX = 0;
+        targetY = screenHeight / 2;
+      } else if (+j === 1) {
+        targetX = screenWidth / 2;
+        targetY = 0;
+      } else if (+j === 2) {
+        targetX = 0;
+        targetY = -screenHeight / 2;
+      } else {
+        targetX = -screenWidth / 2;
+        targetY = 0;
+      }
+
+      let $trick = $klab.find('.trick');
+      $trick.find('.card').css('transform', `translateX(${targetX}px) translateY(${targetY}px)`);
+      setTimeout(function() {
+        $klab.find('.trick').html('');
+        $klab.find('.card.won').remove();
+      }, 500);
+    }
   }
 }
 
