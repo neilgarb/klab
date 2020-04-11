@@ -355,6 +355,9 @@ function moveDealer(data) {
 }
 
 function showGameScores(data) {
+  $klab.find('.trumps').hide();
+  $klab.find('.trick').hide();
+
   $scores.html(`
 <h2>🏆 Scores 🏆</h2>
 <div class="names"><div>Round #</div></div>
@@ -381,6 +384,11 @@ function showGameScores(data) {
     $rounds.append($round);
     i++;
   }
+  let $total = $(`<div class="round"><div>Total</div></div>`);
+  for (let t of data.total) {
+    $total.append($(`<div>${t}</div>`));
+  }
+  $rounds.append($total);
   $rounds.scrollTop($rounds[0].scrollHeight);
 
   let $close = $scores.find('.close');

@@ -3,7 +3,6 @@ package klab
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"math/rand"
 	"strings"
 	"sync"
@@ -184,23 +183,21 @@ func (g *Game) run() {
 	dealer := rand.Intn(g.playerCount)
 
 	for {
-		var round []int
-		for _, p := range playerNames {
-			round = append(round, scores[p])
-		}
-		rounds = append(rounds, round)
-
 		g.mu.Lock()
+		total := make([]int, g.playerCount)
+		for i, p := range g.players {
+			total[i] = scores[p.name]
+		}
 		for _, p := range g.players {
 			websocket.JSON.Send(p.conn, MakeMessage("game_scores", GameScoresMessage{
 				PlayerNames: playerNames,
+				Total:       total,
 				Scores:      rounds,
 			}))
 		}
 		g.mu.Unlock()
 
-		// time.Sleep(5 * time.Second)
-		time.Sleep(time.Second)
+		time.Sleep(10 * time.Second)
 
 		g.mu.Lock()
 		for _, p := range g.players {
@@ -217,6 +214,8 @@ func (g *Game) run() {
 
 		hands := make(map[string][]Card)
 		extra := make(map[string][]Card)
+		var tookOn int
+		var prima bool
 
 		g.mu.Lock()
 		for _, p := range g.players {
@@ -366,6 +365,9 @@ func (g *Game) run() {
 				break BidLoop
 			}
 		}
+
+		tookOn = toBid
+		prima = !round2 || toBid == dealer
 
 		g.mu.Lock()
 		for _, p := range g.players {
@@ -540,11 +542,99 @@ func (g *Game) run() {
 			toPlay = (toPlay + bestPlayer) % g.playerCount
 		}
 
-		for m := range g.ch {
-			log.Println(g.code, m)
+		// Calculate scores.
+		roundScores := make(map[string]int)
+		g.mu.Lock()
+		roundScores[g.players[toPlay].name] += 10
+		g.mu.Unlock()
+		for k, v := range wonCards {
+			for _, vv := range v {
+				switch vv.rank {
+				case RankSeven, RankEight:
+				case RankNine:
+					if vv.suit == trumps {
+						roundScores[k] += 14
+					}
+				case RankTen:
+					roundScores[k] += 10
+				case RankJack:
+					roundScores[k] += 2
+					if vv.suit == trumps {
+						roundScores[k] += 20
+					}
+				case RankQueen:
+					roundScores[k] += 3
+				case RankKing:
+					roundScores[k] += 4
+				case RankAce:
+					roundScores[k] += 11
+				}
+			}
 		}
 
-		time.Sleep(10 * time.Second)
+		var roundWinner string
+		var winningScore int
+		for k, v := range roundScores {
+			if v > winningScore {
+				roundWinner = k
+				winningScore = v
+			}
+		}
+
+		var roundWinnerIdx int
+		g.mu.Lock()
+		for i, p := range g.players {
+			if p.name == roundWinner {
+				roundWinnerIdx = i
+				break
+			}
+		}
+		g.mu.Unlock()
+
+		var tookOnName string
+		g.mu.Lock()
+		tookOnName = g.players[tookOn].name
+		g.mu.Unlock()
+
+		if g.playerCount == 2 {
+			if roundWinnerIdx != tookOn {
+				roundScores[roundWinner] += roundScores[tookOnName]
+				roundScores[tookOnName] = 0
+			}
+		} else if g.playerCount == 3 {
+			g.mu.Lock()
+			for _, p := range g.players {
+				if roundWinnerIdx == tookOn {
+					if p.name == roundWinner {
+						roundScores[p.name] = 2
+					} else {
+						roundScores[p.name] = -1
+					}
+				} else {
+					mod := 1
+					if prima {
+						mod = 2
+					}
+					if p.name == tookOnName {
+						roundScores[p.name] = -2 * mod
+					} else {
+						roundScores[p.name] = 1 * mod
+					}
+				}
+			}
+			g.mu.Unlock()
+		} else {
+			// TODO: 4 players
+		}
+
+		round := make([]int, 0, g.playerCount)
+		g.mu.Lock()
+		for _, p := range g.players {
+			round = append(round, roundScores[p.name])
+		}
+		g.mu.Unlock()
+		rounds = append(rounds, round)
+
 		dealer = (dealer + 1) % g.playerCount
 	}
 }

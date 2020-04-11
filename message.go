@@ -34,6 +34,7 @@ type GameStartedMessage struct {
 
 type GameScoresMessage struct {
 	PlayerNames []string `json:"player_names"`
+	Total       []int    `json:"total"`
 	Scores      [][]int  `json:"scores"`
 }
 
