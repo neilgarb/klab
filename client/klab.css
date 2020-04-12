@@ -319,35 +319,42 @@ p {
 
 .klab-game .players .player {
   position: absolute;
-  background: rgba(139, 69, 19, 0.5);
+  background: darkgreen;
+  border-radius: 10px;
 }
 
 .klab-game .players .player1 {
-  width: 50%;
-  height: 180px;
-  left: 25%;
+  width: 500px;
+  height: 165px;
+  left: 50%;
   bottom: 0;
+  transform: translateX(-50%);
 }
 
 .klab-game .players .player2 {
-  width: 25%;
-  height: 50%;
+  width: 500px;
+  height: 165px;
   right: 0;
-  top: 25%;
+  top: 50%;
+  transform: translateY(-50%) translateX(168px) rotate(-90deg);
+  transform-origin: 50% 50%;
 }
 
 .klab-game .players .player3 {
-  width: 50%;
-  height: 180px;
-  left: 25%;
+  width: 500px;
+  height: 165px;
+  left: 50%;
   top: 0;
+  transform: translateX(-50%);
 }
 
 .klab-game .players .player4 {
-  width: 25%;
-  height: 50%;
+  width: 500px;
+  height: 165px;
   left: 0;
-  top: 25%;
+  top: 50%;
+  transform: translateY(-50%) translateX(-168px) rotate(90deg);
+  transform-origin: 50% 50%;
 }
 
 .klab-game .dealer {
@@ -380,10 +387,32 @@ p {
   position: absolute;
   background: white;
   color: black;
+  top: -50px;
+  padding: 10px;
+  border-radius: 4px;
+  left: -3px;
+  box-shadow: 0px 0 10px rgba(0, 0, 0, 0.6);
+}
+
+.klab-game .speech:after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 25px;
+  width: 0;
+  height: 0;
+  border: 11px solid transparent;
+  border-top-color: white;
+  border-bottom: 0;
+  border-right: 0;
+  margin-left: -17px;
+  margin-bottom: -11px;
 }
 
 .klab-game .player .your_turn {
   position: absolute;
+  top: 0;
+  left: 50%;
 
   animation-name: pulse;
   animation-duration: 1s;
@@ -393,13 +422,13 @@ p {
 
 @keyframes pulse {
   0% {
-    transform: scale(1);
+    transform: translateX(-50%) scale(1);
   }
   40% {
-    transform: scale(1.1);
+    transform: translateX(-50%) scale(1.1);
   }
   100% {
-    transform: scale(1);
+    transform: translateX(-50%) scale(1);
   }
 }
 
@@ -409,7 +438,7 @@ p {
   left: 50%;
   width: 81px;
   height: 111px;
-  transform: translateX(150px) translateY(-50%);
+  transform: translateX(168px) translateY(-50%);
 }
 
 .klab-game .card_up {
@@ -425,8 +454,8 @@ p {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 300px;
-  transform: translateX(-270px) translateY(-50%);
+  width: 280px;
+  transform: translateX(-250px) translateY(-50%);
 }
 
 .klab-game .trick {

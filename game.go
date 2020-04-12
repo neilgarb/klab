@@ -486,7 +486,7 @@ func (g *Game) run() {
 						g.mu.Lock()
 						for _, p := range g.players {
 							websocket.JSON.Send(p.conn, MakeMessage("speech", SpeechMessage{
-								Player:  toPlay,
+								Player:  trickPlayerIdx,
 								Message: announceBonus.String(),
 							}))
 						}
