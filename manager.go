@@ -37,7 +37,7 @@ func (m *Manager) Handle(conn *websocket.Conn, msg *Message) error {
 		return m.LeaveGame(conn)
 	case "start_game":
 		return m.StartGame(conn)
-	case "bid", "play":
+	case "bid", "play", "announce_bonus":
 		return m.Play(conn, msg)
 	}
 	return errors.New("unknown message type")

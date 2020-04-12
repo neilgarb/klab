@@ -72,6 +72,7 @@ type TrumpsMessage struct {
 }
 
 type YourTurnMessage struct {
+	AnnounceBonus string `json:"announce_bonus"`
 }
 
 type PlayMessage struct {
@@ -88,6 +89,13 @@ type TrickWonMessage struct {
 	PlayerCount int `json:"player_count"`
 	FirstPlayer int `json:"first_player"`
 	Winner      int `json:"winner"`
+}
+
+type BonusAwardedMessage struct {
+	Player       int    `json:"player"`
+	Bonus        string `json:"bonus"`
+	Cards        []Card `json:"cards"`
+	CurrentTrick []Card `json:"current_trick"`
 }
 
 func MakeMessage(typ string, data interface{}) *Message {

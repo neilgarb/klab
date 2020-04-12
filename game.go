@@ -3,8 +3,8 @@ package klab
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"math/rand"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -198,7 +198,11 @@ func (g *Game) run() {
 		}
 		g.mu.Unlock()
 
-		time.Sleep(10 * time.Second)
+		if len(rounds) == 0 {
+			time.Sleep(4 * time.Second)
+		} else {
+			time.Sleep(10 * time.Second)
+		}
 
 		g.mu.Lock()
 		for _, p := range g.players {
@@ -215,6 +219,7 @@ func (g *Game) run() {
 
 		hands := make(map[string][]Card)
 		extra := make(map[string][]Card)
+		bonuses := make(map[string][]Bonus)
 		var tookOn int
 		var prima bool
 
@@ -285,9 +290,6 @@ func (g *Game) run() {
 
 						g.mu.Lock()
 						for _, p := range g.players {
-							if p.conn == bidderConn {
-								continue
-							}
 							websocket.JSON.Send(p.conn, MakeMessage("speech", SpeechMessage{
 								Player:  toBid,
 								Message: "Play",
@@ -304,9 +306,6 @@ func (g *Game) run() {
 
 					g.mu.Lock()
 					for _, p := range g.players {
-						if p.conn == bidderConn {
-							continue
-						}
 						websocket.JSON.Send(p.conn, MakeMessage("speech", SpeechMessage{
 							Player:  toBid,
 							Message: "Pass",
@@ -330,9 +329,6 @@ func (g *Game) run() {
 
 						g.mu.Lock()
 						for _, p := range g.players {
-							if p.conn == bidderConn {
-								continue
-							}
 							websocket.JSON.Send(p.conn, MakeMessage("speech", SpeechMessage{
 								Player:  toBid,
 								Message: trumps.String(),
@@ -347,9 +343,6 @@ func (g *Game) run() {
 
 					g.mu.Lock()
 					for _, p := range g.players {
-						if p.conn == bidderConn {
-							continue
-						}
 						websocket.JSON.Send(p.conn, MakeMessage("speech", SpeechMessage{
 							Player:  toBid,
 							Message: "Pass",
@@ -389,19 +382,34 @@ func (g *Game) run() {
 		extra = nil
 
 		wonCards := make(map[string][]Card)
+		announcedBonuses := make(map[string]AnnouncedBonus)
 
 		toPlay := (dealer + 1) % g.playerCount
-		for i := 0; i < 8; i++ {
+		for trickNum := 0; trickNum < 8; trickNum++ {
 
 			trick := make([]Card, 0, g.playerCount)
 
-			for j := 0; j < g.playerCount; j++ {
+			for trickPlayer := 0; trickPlayer < g.playerCount; trickPlayer++ {
+				trickPlayerIdx := (toPlay + trickPlayer) % g.playerCount
 				g.mu.Lock()
-				playerConn := g.players[(toPlay+j)%g.playerCount].conn
-				playerName := g.players[(toPlay+j)%g.playerCount].name
+				playerConn := g.players[trickPlayerIdx].conn
+				playerName := g.players[trickPlayerIdx].name
 				g.mu.Unlock()
 
-				websocket.JSON.Send(playerConn, MakeMessage("your_turn", YourTurnMessage{}))
+				// If the player has a twenty or fifty, tell the client the player
+				// can announce it.
+				var announceBonus string
+				if trickNum == 0 {
+					bestRun := getBestRun(hands[playerName], trumps)
+					if len(bestRun) == 3 {
+						announceBonus = BonusTwenty.String()
+					} else if len(bestRun) == 4 {
+						announceBonus = BonusFifty.String()
+					}
+				}
+				websocket.JSON.Send(playerConn, MakeMessage("your_turn", YourTurnMessage{
+					AnnounceBonus: announceBonus,
+				}))
 
 				var maxTrickTrump int
 				for _, t := range trick {
@@ -442,9 +450,43 @@ func (g *Game) run() {
 					}
 				}
 
-				log.Println(canPlay)
-
 				for m := range g.ch {
+					if m.Message.Type == "announce_bonus" {
+						if m.Conn != playerConn {
+							g.errCh <- errors.New("it's not your turn")
+							continue
+						}
+
+						bestRun := getBestRun(hands[playerName], trumps)
+						var announceBonus Bonus
+						if len(bestRun) == 3 {
+							announceBonus = BonusTwenty
+						} else if len(bestRun) == 4 {
+							announceBonus = BonusFifty
+						}
+						if announceBonus == BonusUnknown {
+							g.errCh <- errors.New("no bonus to announce")
+							continue
+						}
+						announcedBonuses[playerName] = AnnouncedBonus{
+							Bonus: announceBonus,
+							Cards: bestRun,
+						}
+
+						g.errCh <- nil
+
+						g.mu.Lock()
+						for _, p := range g.players {
+							websocket.JSON.Send(p.conn, MakeMessage("speech", SpeechMessage{
+								Player:  toPlay,
+								Message: announceBonus.String(),
+							}))
+						}
+						g.mu.Unlock()
+
+						continue
+					}
+
 					if m.Message.Type != "play" {
 						g.errCh <- nil
 						continue
@@ -468,6 +510,7 @@ func (g *Game) run() {
 
 					g.errCh <- nil
 
+					// Play the card and remove it from the player's hand.
 					trick = append(trick, playMessage.Card)
 					newHand := make([]Card, 0, len(hands[playerName])-1)
 					for _, c := range hands[playerName] {
@@ -478,6 +521,7 @@ func (g *Game) run() {
 					}
 					hands[playerName] = newHand
 
+					// Send the updated trick to all players.
 					g.mu.Lock()
 					for _, p := range g.players {
 						websocket.JSON.Send(p.conn, MakeMessage("trick", TrickMessage{
@@ -516,11 +560,98 @@ func (g *Game) run() {
 				}
 			}
 
+			// Once the first trick is played, and before the cards are given
+			// to the winning player, we need to settle twenties and fifties.
+			if trickNum == 0 && len(announcedBonuses) > 0 {
+
+				var haveFifty bool
+				for _, v := range announcedBonuses {
+					if v.Bonus == BonusFifty {
+						haveFifty = true
+					}
+				}
+
+				var highCard Card
+				var highCardPlayer int
+				var highCardPlayerName string
+
+				g.mu.Lock()
+				for i := 0; i < g.playerCount; i++ {
+					time.Sleep(2 * time.Second)
+
+					announcer := (dealer + 1 + i) % g.playerCount
+					announcerName := g.players[announcer].name
+					b := announcedBonuses[announcerName]
+					if b.Bonus == BonusUnknown {
+						continue
+					}
+					if b.Bonus == BonusTwenty && haveFifty {
+						continue
+					}
+
+					if highCard.rank > b.HighCard().rank ||
+						(highCard.rank == b.HighCard().rank && highCard.suit == trumps) {
+
+						for _, p := range g.players {
+							websocket.JSON.Send(p.conn, MakeMessage("speech", SpeechMessage{
+								Player:  announcer,
+								Message: "Yours.",
+							}))
+						}
+
+						continue
+					}
+
+					highCard = b.HighCard()
+					highCardPlayer = announcer
+					highCardPlayerName = announcerName
+
+					message := "My " + b.Bonus.String() + " is " + highCard.rank.String() + " high"
+					if highCard.suit == trumps {
+						message += " in trumps"
+					}
+					message += "."
+
+					for _, p := range g.players {
+						websocket.JSON.Send(p.conn, MakeMessage("speech", SpeechMessage{
+							Player:  announcer,
+							Message: message,
+						}))
+					}
+				}
+
+				time.Sleep(2 * time.Second)
+
+				bonuses[highCardPlayerName] = append(bonuses[highCardPlayerName],
+					announcedBonuses[highCardPlayerName].Bonus)
+
+				for _, p := range g.players {
+					websocket.JSON.Send(p.conn, MakeMessage("bonus_awarded", BonusAwardedMessage{
+						Player:       highCardPlayer,
+						Bonus:        announcedBonuses[highCardPlayerName].Bonus.String(),
+						Cards:        announcedBonuses[highCardPlayerName].Cards,
+						CurrentTrick: trick,
+					}))
+				}
+
+				g.mu.Unlock()
+			}
+
 			time.Sleep(2 * time.Second)
 
+			winner := (toPlay + bestPlayer) % g.playerCount
+
 			g.mu.Lock()
-			wonCards[g.players[bestPlayer].name] = append(
-				wonCards[g.players[bestPlayer].name], trick...)
+			bestPlayerName := g.players[winner].name
+			for _, c := range trick {
+				if c.suit == trumps && c.rank == RankNine {
+					bonuses[bestPlayerName] = append(bonuses[bestPlayerName], BonusMinel)
+				}
+				if c.suit == trumps && c.rank == RankJack {
+					bonuses[bestPlayerName] = append(bonuses[bestPlayerName], BonusJass)
+				}
+				wonCards[bestPlayerName] = append(wonCards[bestPlayerName], c)
+			}
 			for _, p := range g.players {
 				websocket.JSON.Send(p.conn, MakeMessage("trick_won", TrickWonMessage{
 					PlayerCount: g.playerCount,
@@ -531,36 +662,36 @@ func (g *Game) run() {
 			g.mu.Unlock()
 
 			trick = nil
-			toPlay = (toPlay + bestPlayer) % g.playerCount
+			toPlay = winner
 		}
+
+		// Last trick.
+		g.mu.Lock()
+		bonuses[g.players[toPlay].name] = append(
+			bonuses[g.players[toPlay].name], BonusStoch)
+		g.mu.Unlock()
 
 		// Calculate scores.
 		roundScores := make(map[string]int)
-		g.mu.Lock()
-		roundScores[g.players[toPlay].name] += 10
-		g.mu.Unlock()
 		for k, v := range wonCards {
 			for _, vv := range v {
 				switch vv.rank {
-				case RankSeven, RankEight:
-				case RankNine:
-					if vv.suit == trumps {
-						roundScores[k] += 14
-					}
-				case RankTen:
-					roundScores[k] += 10
 				case RankJack:
 					roundScores[k] += 2
-					if vv.suit == trumps {
-						roundScores[k] += 20
-					}
 				case RankQueen:
 					roundScores[k] += 3
 				case RankKing:
 					roundScores[k] += 4
+				case RankTen:
+					roundScores[k] += 10
 				case RankAce:
 					roundScores[k] += 11
 				}
+			}
+		}
+		for k, v := range bonuses {
+			for _, vv := range v {
+				roundScores[k] += vv.Value()
 			}
 		}
 
@@ -594,6 +725,8 @@ func (g *Game) run() {
 				roundScores[tookOnName] = 0
 			}
 		} else if g.playerCount == 3 {
+			// TODO: bonus rounds
+
 			g.mu.Lock()
 			for _, p := range g.players {
 				if roundWinnerIdx == tookOn {
@@ -630,6 +763,58 @@ func (g *Game) run() {
 
 		dealer = (dealer + 1) % g.playerCount
 	}
+}
+
+func getBestRun(hand []Card, trumps Suit) []Card {
+	sort.Slice(hand, func(i, j int) bool {
+		if hand[i].suit == hand[j].suit {
+			return hand[i].rank < hand[j].rank
+		}
+		return hand[i].suit < hand[j].suit
+	})
+
+	var bestRun []Card
+	var highCard Card
+	var run []Card
+	for i, c := range hand {
+		var appended bool
+		if len(run) == 0 ||
+			(c.suit == run[0].suit && c.rank == run[len(run)-1].rank+1) {
+			appended = true
+			run = append(run, c)
+		}
+
+		if i == len(hand)-1 || !appended {
+			if len(run) == 3 {
+				if bestRun == nil ||
+					(len(bestRun) == 3 && run[len(run)-1].rank > highCard.rank) ||
+					(len(bestRun) == 3 && run[len(run)-1].rank == highCard.rank && run[0].suit == trumps) {
+					bestRun = make([]Card, 3)
+					for i, cc := range run {
+						bestRun[i] = cc
+						highCard = cc
+					}
+				}
+			} else if len(run) > 3 {
+				if bestRun == nil ||
+					run[len(run)-1].rank > highCard.rank ||
+					(run[len(run)-1].rank == highCard.rank && run[0].suit == trumps) {
+					bestRun = make([]Card, 4)
+					for i, cc := range run[len(run)-4:] {
+						bestRun[i] = cc
+						highCard = cc
+					}
+				}
+			}
+
+			run = nil
+			if !appended {
+				run = append(run, c)
+			}
+		}
+	}
+
+	return bestRun
 }
 
 func (g *Game) MaybePlay(conn *websocket.Conn, msg *Message) (bool, error) {

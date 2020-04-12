@@ -1,35 +1,61 @@
 package klab
 
-import "errors"
-
-type RoundState int
+type Bonus int
 
 const (
-	RoundStateUnknown   RoundState = 0
-	RoundStateStarted   RoundState = 1
-	RoundStateBidRound1 RoundState = 2
-	RoundStateBidRound2 RoundState = 3
-	RoundStatePlaying   RoundState = 4
-	RoundStateScore     RoundState = 5
-	RoundStateComplete  RoundState = 6
+	BonusUnknown Bonus = 0
+	BonusTwenty  Bonus = 1
+	BonusFifty   Bonus = 2
+	BonusBella   Bonus = 3
+	BonusStoch   Bonus = 4
+	BonusMinel   Bonus = 5
+	BonusJass    Bonus = 6
 )
 
-type Round struct {
-	players []*Player
-	dealer  PlayerID
-	state   RoundState
-	trumps  Suit
-}
-
-func NewRound(players []*Player, dealer PlayerID) *Round {
-	return &Round{players: players, dealer: dealer}
-}
-
-func (r *Round) Start(players []*Player, dealer PlayerID) error {
-	if r.state != RoundStateUnknown {
-		return errors.New("invalid state transition")
+func (b Bonus) String() string {
+	switch b {
+	case BonusTwenty:
+		return "Twenty"
+	case BonusFifty:
+		return "Fifty"
+	case BonusBella:
+		return "Bella"
+	case BonusStoch:
+		return "Stoch"
+	case BonusMinel:
+		return "Minel"
+	case BonusJass:
+		return "Jass"
 	}
+	return "Unknown"
+}
 
-	r.state = RoundStateStarted
-	return nil
+func (b Bonus) Value() int {
+	switch b {
+	case BonusTwenty:
+		return 20
+	case BonusFifty:
+		return 50
+	case BonusBella:
+		return 20
+	case BonusStoch:
+		return 10
+	case BonusMinel:
+		return 14
+	case BonusJass:
+		return 20
+	}
+	return 0
+}
+
+type AnnouncedBonus struct {
+	Bonus Bonus
+	Cards []Card
+}
+
+func (a AnnouncedBonus) HighCard() Card {
+	if len(a.Cards) == 0 {
+		return Card{}
+	}
+	return a.Cards[len(a.Cards)-1]
 }

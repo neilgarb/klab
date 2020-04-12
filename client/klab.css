@@ -440,7 +440,7 @@ p {
   position: absolute;
   background: url(cards.png) no-repeat 0 -420px;
   border-radius: 5px;
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.6);
 }
 
 .klab-game .card[data-suit="1"][data-rank="1"] { background-position: 0 0; }
@@ -484,7 +484,16 @@ p {
   position: relative;
   display: inline-block;
   margin: 0 -20px 5px 0;
-  transition: .2s all;
+  transition: .2s transform;
+  transform: none;
+}
+
+.klab-game .player .cards .card.played {
+  opacity: 0.5;
+}
+
+.klab-game .player .cards .card.bonus {
+  transform: translateY(-20px);
 }
 
 .klab-game .player.your_turn .cards .card.up:hover {

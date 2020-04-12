@@ -263,8 +263,8 @@ function showGame(data) {
     </div>
     <div class="deck"></div>
     <div class="card_up"></div>
-    <div class="bid_options" style="display: none;"></div>
     <div class="trick" style="display: none"></div>
+    <div class="bid_options" style="display: none;"></div>
     <div class="trumps"></div>
   </div>
 </div>
@@ -341,6 +341,9 @@ function showGame(data) {
         break;
       case 'trick_won':
         showTrickWon(positions, msg.data);
+        break;
+      case 'bonus_awarded':
+        showBonusAwarded(positions, msg.data);
         break;
       case 'error':
         showError(msg.data);
@@ -555,7 +558,7 @@ function showSpeech(positions, data) {
     let $speech = $klab.find(find).html(data.message).show();
     setTimeout(function() {
       $speech.hide();
-    }, 3000);
+    }, 4000);
   }
 }
 
@@ -563,6 +566,24 @@ function showYourTurn(data) {
   let $player = $klab.find('.player1');
   $player.find('.your_turn').show();
   $player.addClass('your_turn');
+
+  let $bidOptions = $klab.find('.bid_options').html('').show();
+  if (data.announce_bonus) {
+    $bidOptions.html(`
+<button class="button announce">Announce "${data.announce_bonus}"</button>
+<button class="button skip">Skip</button>  
+`);
+
+    $bidOptions.find('.button.announce').click(function(e) {
+      sendMessage('announce_bonus', null);
+      e.preventDefault();
+      $bidOptions.hide();
+    });
+    $bidOptions.find('.button.skip').click(function(e) {
+      e.preventDefault();
+      $bidOptions.hide();
+    });
+  }
 
   $player.find('.card.up').click(function(e) {
     e.preventDefault();
@@ -573,14 +594,17 @@ function showYourTurn(data) {
     sendMessage('play', {
       card: card,
     });
-    $(this).remove();
+    $player.find('.card').removeClass('.played');
+    $(this).addClass('played');
   });
 }
 
 function showTrick(positions, data) {
+  $klab.find('.bid_options').hide();
   let $player = $klab.find('.player1');
   $player.find('.your_turn').hide();
   $player.find('.card.up').off('click');
+  $player.find('.card.played').remove();
   $player.removeClass('your_turn');
   let $trick = $klab.find('.trick').show();
   $trick.html('');
@@ -609,7 +633,6 @@ function showTrickWon(positions, data) {
     if (positions[j] === (data.first_player + data.winner) % data.player_count)  {
       let screenWidth = $(window).width();
       let screenHeight = $(window).height();
-
       let targetX, targetY;
       if (+j === 0) {
         targetX = 0;
@@ -624,13 +647,49 @@ function showTrickWon(positions, data) {
         targetX = -screenWidth / 2;
         targetY = 0;
       }
-
       let $trick = $klab.find('.trick');
       $trick.find('.card').css('transform', `translateX(${targetX}px) translateY(${targetY}px)`);
       setTimeout(function() {
         $klab.find('.trick').html('');
         $klab.find('.card.won').remove();
       }, 500);
+    }
+  }
+}
+
+function showBonusAwarded(positions, data) {
+  for (let j in positions) {
+    if (positions[j] !== data.player) {
+      continue;
+    }
+
+    let $cards = $klab.find('.player' + (+j+1) + ' .cards');
+    if (+j === 0) {
+      for (let c of data.cards) {
+        $cards.find('.card[data-suit="' + c.suit + '"][data-rank="' + c.rank + '"]').addClass('bonus');
+      }
+      setTimeout(function() {
+        $cards.find('.card').removeClass('bonus');
+      }, 3000);
+    } else {
+      for (let c of data.cards) {
+        let played = false;
+        for (let t of data.current_trick) {
+          if (t.suit === c.suit && t.rank === c.rank) {
+            played = true;
+            break;
+          }
+        }
+        if (played) {
+          continue;
+        }
+        let $available = $cards.find('.card:not(.bonus)');
+        let idx = Math.floor(Math.random() * $available.length);
+        $available.eq(idx).addClass('bonus').attr('data-suit', c.suit).attr('data-rank', c.rank).addClass('up');
+      }
+      setTimeout(function() {
+        $cards.find('.card').removeClass('bonus').removeClass('up').attr('data-rank', '').attr('data-suit', '');
+      }, 3000);
     }
   }
 }
