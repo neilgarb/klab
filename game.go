@@ -611,7 +611,7 @@ func (g *Game) run() {
 						for _, p := range g.players {
 							websocket.JSON.Send(p.conn, MakeMessage("speech", SpeechMessage{
 								Player:  announcer,
-								Message: "Yours.",
+								Message: "It's yours.",
 							}))
 						}
 

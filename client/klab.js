@@ -629,7 +629,7 @@ function showYourTurn(data) {
   if (data.announce_bonus) {
     $bidOptions.html(`
 <button class="button announce">Announce "${data.announce_bonus}"</button>
-<button class="button skip">Skip</button>  
+<button class="button skip">Keep schtum</button>  
 `);
 
     $trick.addClass('have_announcement');

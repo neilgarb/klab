@@ -395,7 +395,7 @@ p {
 
 .klab-game .took_on {
   position: absolute;
-  top: 21px;
+  bottom: 0;
   right: 0;
 }
 
@@ -434,7 +434,7 @@ p {
 
 .klab-game .player .your_turn {
   position: absolute;
-  top: 0;
+  top: 10px;
   left: 50%;
 
   animation-name: pulse;
