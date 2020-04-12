@@ -393,6 +393,7 @@ func (g *Game) run() {
 
 		wonCards := make(map[string][]Card)
 		announcedBonuses := make(map[string]AnnouncedBonus)
+		bellaPlayed := make(map[Rank]string)
 
 		toPlay := (dealer + 1) % g.playerCount
 		for trickNum := 0; trickNum < 8; trickNum++ {
@@ -537,6 +538,31 @@ func (g *Game) run() {
 						newHand = append(newHand, c)
 					}
 					hands[playerName] = newHand
+
+					// Bella.
+					if playMessage.Card.suit == trumps {
+						var otherRank Rank
+						if playMessage.Card.rank == RankQueen {
+							otherRank = RankKing
+						} else if playMessage.Card.rank == RankKing {
+							otherRank = RankQueen
+						}
+						if otherRank > 0 {
+							if bellaPlayed[otherRank] == playerName {
+								bonuses[playerName] = append(
+									bonuses[playerName], BonusBella)
+								g.mu.Lock()
+								for _, p := range g.players {
+									websocket.JSON.Send(p.conn, MakeMessage("speech", SpeechMessage{
+										Player:  trickPlayerIdx,
+										Message: "Bella",
+									}))
+								}
+								g.mu.Unlock()
+							}
+							bellaPlayed[playMessage.Card.rank] = playerName
+						}
+					}
 
 					// Send the updated trick to all players.
 					g.mu.Lock()
@@ -784,6 +810,8 @@ func (g *Game) run() {
 		}
 		g.mu.Unlock()
 		rounds = append(rounds, round)
+
+		time.Sleep(5 * time.Second)
 
 		// Show scores.
 		g.mu.Lock()
