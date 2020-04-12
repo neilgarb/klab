@@ -367,6 +367,7 @@ func (g *Game) run() {
 		for _, p := range g.players {
 			websocket.JSON.Send(p.conn, MakeMessage("trumps", TrumpsMessage{
 				Trumps:     int(trumps),
+				TookOn:     tookOn,
 				ExtraCards: extra[p.name],
 			}))
 		}
@@ -399,12 +400,14 @@ func (g *Game) run() {
 				// If the player has a twenty or fifty, tell the client the player
 				// can announce it.
 				var announceBonus string
-				if trickNum == 0 {
-					bestRun := getBestRun(hands[playerName], trumps)
-					if len(bestRun) == 3 {
-						announceBonus = BonusTwenty.String()
-					} else if len(bestRun) == 4 {
-						announceBonus = BonusFifty.String()
+				if trumps != SuitUnknown {
+					if trickNum == 0 {
+						bestRun := getBestRun(hands[playerName], trumps)
+						if len(bestRun) == 3 {
+							announceBonus = BonusTwenty.String()
+						} else if len(bestRun) == 4 {
+							announceBonus = BonusFifty.String()
+						}
 					}
 				}
 				websocket.JSON.Send(playerConn, MakeMessage("your_turn", YourTurnMessage{
@@ -454,6 +457,11 @@ func (g *Game) run() {
 					if m.Message.Type == "announce_bonus" {
 						if m.Conn != playerConn {
 							g.errCh <- errors.New("it's not your turn")
+							continue
+						}
+
+						if trumps == SuitUnknown {
+							g.errCh <- errors.New("can't announce twenty or fifty in no trumps")
 							continue
 						}
 
@@ -562,8 +570,7 @@ func (g *Game) run() {
 
 			// Once the first trick is played, and before the cards are given
 			// to the winning player, we need to settle twenties and fifties.
-			if trickNum == 0 && len(announcedBonuses) > 0 {
-
+			if trumps != SuitUnknown && trickNum == 0 && len(announcedBonuses) > 0 {
 				var haveFifty bool
 				for _, v := range announcedBonuses {
 					if v.Bonus == BonusFifty {

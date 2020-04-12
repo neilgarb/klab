@@ -304,6 +304,9 @@ function showGame(data) {
   <div class="dealer" style="display: none;">
     <span>Dealer</span> 
   </div>
+  <div class="took_on" style="display: none;">
+    <span>Took on</span> 
+  </div>
   <div class="speech" style="display: none"></div>
   <div class="your_turn" style="display: none;">Your turn</div>
 </div>
@@ -318,7 +321,6 @@ function showGame(data) {
         showGameScores(msg.data);
         break;
       case 'round_started':
-        $scores.hide();
         moveDealer(msg.data);
         break;
       case 'round_dealt':
@@ -328,7 +330,7 @@ function showGame(data) {
         showBidOptions(msg.data);
         break;
       case 'trumps':
-        setTrumps(msg.data);
+        setTrumps(positions, msg.data);
         break;
       case 'speech':
         showSpeech(positions, msg.data);
@@ -353,6 +355,8 @@ function showGame(data) {
 }
 
 function moveDealer(data) {
+  $scores.hide();
+  $klab.find('.took_on').hide();
   $klab.find('.players .player .dealer').hide();
   $klab.find('.players .player[data-pos=' + data.dealer + '] .dealer').show();
 }
@@ -515,8 +519,13 @@ function showBidOptions(data) {
   });
 }
 
-async function setTrumps(data) {
+async function setTrumps(positions, data) {
   $klab.find('.bid_options').hide();
+  for (let j in positions) {
+    if (+positions[j] === data.took_on) {
+      $klab.find('.player' + (+j+1) + ' .took_on').show();
+    }
+  }
   let $cards = $klab.find('.player1 .cards');
   $cards.find('.card:gt(5)').remove();
   for (let c of data.extra_cards) {
@@ -568,20 +577,25 @@ function showYourTurn(data) {
   $player.addClass('your_turn');
 
   let $bidOptions = $klab.find('.bid_options').html('').show();
+  let $trick = $klab.find('.trick');
   if (data.announce_bonus) {
     $bidOptions.html(`
 <button class="button announce">Announce "${data.announce_bonus}"</button>
 <button class="button skip">Skip</button>  
 `);
 
+    $trick.addClass('have_announcement');
+
     $bidOptions.find('.button.announce').click(function(e) {
       sendMessage('announce_bonus', null);
       e.preventDefault();
       $bidOptions.hide();
+      $trick.removeClass('have_announcement');
     });
     $bidOptions.find('.button.skip').click(function(e) {
       e.preventDefault();
       $bidOptions.hide();
+      $trick.removeClass('have_announcement');
     });
   }
 

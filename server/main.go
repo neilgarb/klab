@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"log"
 	"math/rand"
 	"net/http"
 	"net/http/pprof"
@@ -36,6 +37,7 @@ func main() {
 	}
 	r.ServeFiles("/client/*filepath", http.Dir(path.Join(wd, "/client")))
 
+	log.Println("Listening")
 	http.ListenAndServe(":8080", r)
 }
 
