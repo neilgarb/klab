@@ -12,6 +12,8 @@ type ErrorMessage string
 type CreateGameMessage struct {
 	Name        string `json:"name"`
 	PlayerCount int    `json:"player_count"`
+	RoundCount  int    `json:"round_count"`
+	MaxScore    int    `json:"max_score"`
 }
 
 type JoinGameMessage struct {
@@ -20,11 +22,12 @@ type JoinGameMessage struct {
 }
 
 type GameLobbyMessage struct {
-	Code        string   `json:"code"`
-	Host        bool     `json:"host"`
-	CanStart    bool     `json:"can_start"`
-	PlayerCount int      `json:"player_count"`
-	PlayerNames []string `json:"player_names"`
+	Code            string   `json:"code"`
+	Host            bool     `json:"host"`
+	CanStart        bool     `json:"can_start"`
+	PlayerCount     int      `json:"player_count"`
+	PlayerNames     []string `json:"player_names"`
+	GameDescription string   `json:"game_description"`
 }
 
 type GameStartedMessage struct {
@@ -97,6 +100,9 @@ type BonusAwardedMessage struct {
 	Bonus        string `json:"bonus"`
 	Cards        []Card `json:"cards"`
 	CurrentTrick []Card `json:"current_trick"`
+}
+
+type GameOverMessage struct {
 }
 
 func MakeMessage(typ string, data interface{}) *Message {

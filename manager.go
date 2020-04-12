@@ -55,7 +55,7 @@ func (m *Manager) CreateGame(conn *websocket.Conn, msg CreateGameMessage) error 
 		}
 	}
 
-	game, err := NewGame(code, msg.PlayerCount)
+	game, err := NewGame(code, msg.PlayerCount, msg.RoundCount, msg.MaxScore)
 	if err != nil {
 		return err
 	}

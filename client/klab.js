@@ -76,6 +76,42 @@ function showNewGame() {
         4 players
       </label>
     </div>
+    
+    <div class="round-count" style="display: none">
+      <span class="label">Number of rounds</span>
+      <label>
+        <input type="radio" name="round_count" value="9">
+        6 rounds then 3 double rounds
+      </label>
+      <label>
+        <input type="radio" name="round_count" value="12">
+        9 rounds then 3 double rounds
+      </label>
+      <label>
+        <input type="radio" name="round_count" value="15" checked>
+        12 rounds then 3 double rounds
+      </label>
+      <label>
+        <input type="radio" name="round_count" value="18">
+        15 rounds then 3 double rounds
+      </label>
+    </div>
+    
+    <div class="max-score">
+      <span class="label">Play until score</span>
+      <label>
+        <input type="radio" name="max_score" value="501">
+        501
+      </label>
+      <label>
+        <input type="radio" name="max_score" value="1001" checked>
+        1001
+      </label>
+      <label>
+        <input type="radio" name="max_score" value="1501">
+        1501
+      </label>
+    </div>
   </forma>
   
   <div class="buttons">
@@ -85,6 +121,18 @@ function showNewGame() {
 </div>
 `);
   $klab.find('input[name=name]').focus();
+
+  $klab.find('input[name=players]').click(function(e) {
+    let numPlayers = +$('input[name=players]:checked').val();
+    if (numPlayers === 2 || numPlayers === 4) {
+      $klab.find('.round-count').hide();
+      $klab.find('.max-score').show();
+    } else if (numPlayers === 3) {
+      $klab.find('.round-count').show();
+      $klab.find('.max-score').hide();
+    }
+  });
+
   $klab.find('.button.create-game').click(function(e) {
     e.preventDefault();
 
@@ -108,6 +156,8 @@ function showNewGame() {
     sendMessage('create_game', {
       name: $klab.find('input[name=name]').val(),
       player_count: playerCount,
+      max_score: +$klab.find('input[name=max_score]:checked').val(),
+      round_count: +$klab.find('input[name=round_count]:checked').val(),
     });
   });
   $klab.find('.button.back').click(function(e) {
@@ -178,7 +228,10 @@ function showGameLobbyIndividual(data) {
   <p class="code">${data.code}</p>
   
   <p>Players</p>
-  <ol class="players"></ol>
+  <div class="players"></div>
+  
+  <p>Rules</p>
+  <p class="rules">${data.game_description}</p>
   
   <div class="buttons">
     <button class="button start" style="display: none" disabled>Start game</button>
@@ -194,7 +247,7 @@ function showGameLobbyIndividual(data) {
       playerName = data.player_names[i];
     }
 
-    $players.append(`<li class="player">${playerName}</li>`)
+    $players.append(`<div class="player">${playerName}</div>`)
   }
 
   ws.onmessage = function(j) {
@@ -240,15 +293,7 @@ function showGameLobbyIndividual(data) {
 }
 
 function showGameLobbyTeams(data) {
-  $klab.html(`
-<div class="klab-game-lobby teams">
-  <img src="jack.png" class="header">
-  <h1>Jassus, boet!</h1>
-  
-  <p>Game code</p>
-  <p class="code">${data.code}</p>
-</div>
-`);
+  // TODO
 }
 
 function showGame(data) {
@@ -346,6 +391,9 @@ function showGame(data) {
         break;
       case 'bonus_awarded':
         showBonusAwarded(positions, msg.data);
+        break;
+      case 'game_over':
+        showHome();
         break;
       case 'error':
         showError(msg.data);

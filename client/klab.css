@@ -191,7 +191,7 @@ input[type=text]:invalid:not(:focus) {
 }
 
 img.header {
-  width: 100px;
+  width: 50px;
   border-radius: 4px;
   align-self: center;
 }
@@ -245,6 +245,18 @@ p {
   margin-bottom: 32px;
 }
 
+.klab-new-game .round-count {
+  flex-direction: column;
+  display: flex;
+  margin-bottom: 32px;
+}
+
+.klab-new-game .max-score {
+  flex-direction: column;
+  display: flex;
+  margin-bottom: 32px;
+}
+
 .klab-new-game .players-wrapper .players {
   width: 100px;
 }
@@ -286,6 +298,12 @@ p {
   font-family: Arial, sans-serif;
   font-size: 24px;
   margin: 0 0 16px 0;
+  text-align: center;
+}
+
+.klab-game-lobby .rules {
+  font-family: Arial, sans-serif;
+  margin: 0 0 32px 0;
 }
 
 .klab-game {
@@ -302,8 +320,8 @@ p {
 }
 
 .klab-game .header img {
-  width: 20px;
-  margin: 20px;
+  height: 50px;
+  margin: 5px;
 }
 
 .klab-game .table {
@@ -357,6 +375,11 @@ p {
   transform-origin: 50% 50%;
 }
 
+.klab-game .name {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
 .klab-game .dealer {
   position: absolute;
   top: 0;
@@ -458,6 +481,14 @@ p {
   transform: translateX(-250px) translateY(-50%);
 }
 
+.klab-game .button + .button {
+  margin: 0 8px 8px 0;
+}
+
+.klab-game .button {
+  margin: 0 8px 8px 0;
+}
+
 .klab-game .trick {
   position: absolute;
   height: 105px;
@@ -475,10 +506,10 @@ p {
   transition: .5s all;
 }
 
-.klab-game .trick .card.trick-player1 { transform: translateY(85px); }
-.klab-game .trick .card.trick-player2 { transform: translateX(55px); }
-.klab-game .trick .card.trick-player3 { transform: translateY(-85px); }
-.klab-game .trick .card.trick-player4 { transform: translateX(-55px); }
+.klab-game .trick .card.trick-player1 { transform: translateY(65px); }
+.klab-game .trick .card.trick-player2 { transform: translateX(35px); }
+.klab-game .trick .card.trick-player3 { transform: translateY(-65px); }
+.klab-game .trick .card.trick-player4 { transform: translateX(-35px); }
 
 .klab-game .trumps {
   position: absolute;
@@ -543,6 +574,8 @@ p {
 
 .klab-game .player .cards {
   padding: 10px 0 10px 20px;
+  position: absolute;
+  top: 32px;
 }
 
 .klab-game .player .cards .card {

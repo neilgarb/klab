@@ -3,6 +3,7 @@ package klab
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math/rand"
 	"sort"
 	"strings"
@@ -20,6 +21,8 @@ type ConnMessage struct {
 type Game struct {
 	code        string
 	playerCount int
+	roundCount  int
+	maxScore    int
 
 	mu      sync.Mutex
 	players []*Player
@@ -28,7 +31,7 @@ type Game struct {
 	errCh   chan error
 }
 
-func NewGame(code string, playerCount int) (*Game, error) {
+func NewGame(code string, playerCount, roundCount, maxScore int) (*Game, error) {
 	code = strings.TrimSpace(strings.ToUpper(code))
 	if code == "" {
 		return nil, errors.New("no game code provided")
@@ -38,9 +41,21 @@ func NewGame(code string, playerCount int) (*Game, error) {
 		return nil, errors.New("number of players should be 2, 3 or 4")
 	}
 
+	if playerCount == 2 || playerCount == 4 {
+		if maxScore != 501 && maxScore != 1001 && maxScore != 1501 {
+			return nil, errors.New("invalid max score")
+		}
+	} else {
+		if roundCount != 9 && roundCount != 12 && roundCount != 15 && roundCount != 18 {
+			return nil, errors.New("invalid round count")
+		}
+	}
+
 	return &Game{
 		code:        code,
 		playerCount: playerCount,
+		roundCount:  roundCount,
+		maxScore:    maxScore,
 	}, nil
 }
 
@@ -83,13 +98,21 @@ func (g *Game) Join(conn *websocket.Conn, name string) error {
 	g.players = append(g.players, player)
 	playerNames = append(playerNames, player.name)
 
+	var gameDescription string
+	if g.playerCount == 2 || g.playerCount == 4 {
+		gameDescription = fmt.Sprintf("Play until one player has at least %d points", g.maxScore)
+	} else if g.playerCount == 3 {
+		gameDescription = fmt.Sprintf("Play %d single rounds and 3 double rounds", g.roundCount - 3)
+	}
+
 	for i, p := range g.players {
 		websocket.JSON.Send(p.conn, MakeMessage("game_lobby", GameLobbyMessage{
-			Code:        g.code,
-			Host:        i == 0,
-			CanStart:    g.playerCount == len(g.players),
-			PlayerCount: g.playerCount,
-			PlayerNames: playerNames,
+			Code:            g.code,
+			Host:            i == 0,
+			CanStart:        g.playerCount == len(g.players),
+			PlayerCount:     g.playerCount,
+			PlayerNames:     playerNames,
+			GameDescription: gameDescription,
 		}))
 	}
 
@@ -184,20 +207,6 @@ func (g *Game) run() {
 	dealer := rand.Intn(g.playerCount)
 
 	for {
-		g.mu.Lock()
-		total := make([]int, g.playerCount)
-		for i, p := range g.players {
-			total[i] = scores[p.name]
-		}
-		for _, p := range g.players {
-			websocket.JSON.Send(p.conn, MakeMessage("game_scores", GameScoresMessage{
-				PlayerNames: playerNames,
-				Total:       total,
-				Scores:      rounds,
-			}))
-		}
-		g.mu.Unlock()
-
 		if len(rounds) == 0 {
 			time.Sleep(4 * time.Second)
 		} else {
@@ -732,8 +741,6 @@ func (g *Game) run() {
 				roundScores[tookOnName] = 0
 			}
 		} else if g.playerCount == 3 {
-			// TODO: bonus rounds
-
 			g.mu.Lock()
 			for _, p := range g.players {
 				if roundWinnerIdx == tookOn {
@@ -755,21 +762,62 @@ func (g *Game) run() {
 				}
 			}
 			g.mu.Unlock()
+
+			if g.roundCount-len(rounds) <= 3 {
+				for k, v := range roundScores {
+					roundScores[k] = v * 2
+				}
+			}
 		} else {
 			// TODO: 4 players
 		}
 
+		var maxScore int
 		round := make([]int, 0, g.playerCount)
 		g.mu.Lock()
 		for _, p := range g.players {
 			round = append(round, roundScores[p.name])
 			scores[p.name] += roundScores[p.name]
+			if scores[p.name] > maxScore {
+				maxScore = scores[p.name]
+			}
 		}
 		g.mu.Unlock()
 		rounds = append(rounds, round)
 
+		// Show scores.
+		g.mu.Lock()
+		total := make([]int, g.playerCount)
+		for i, p := range g.players {
+			total[i] = scores[p.name]
+		}
+		for _, p := range g.players {
+			websocket.JSON.Send(p.conn, MakeMessage("game_scores", GameScoresMessage{
+				PlayerNames: playerNames,
+				Total:       total,
+				Scores:      rounds,
+			}))
+		}
+		g.mu.Unlock()
+
+		if g.playerCount == 2 || g.playerCount == 4 {
+			if maxScore >= g.maxScore {
+				break
+			}
+		} else if len(rounds) == g.roundCount {
+			break
+		}
+
 		dealer = (dealer + 1) % g.playerCount
 	}
+
+	time.Sleep(10 * time.Second)
+
+	g.mu.Lock()
+	for _, p := range g.players {
+		websocket.JSON.Send(p.conn, MakeMessage("game_over", GameOverMessage{}))
+	}
+	g.mu.Unlock()
 }
 
 func getBestRun(hand []Card, trumps Suit) []Card {
