@@ -21,7 +21,11 @@ function init() {
 }
 
 function connect() {
-  ws = new WebSocket('ws://' + document.location.host + '/ws');
+  let scheme = 'wss';
+  if (document.location.protocol === 'http:') {
+    scheme = 'ws';
+  }
+  ws = new WebSocket(scheme + '://' + document.location.host + '/ws');
   ws.onopen = function() {
     console.log('ws open');
     $overlay.hide();
