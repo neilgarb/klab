@@ -40,7 +40,7 @@ function connect() {
 function showHome() {
   $klab.html(`
 <div class="klab-home">
-  <img src="/client/jack.png" class="header">
+  <img src="/client/jack.png" class="header home">
   <h1>Jassus, boet!</h1>
   <p>A multiplayer Klaberjass game</p>
   <div class="buttons">

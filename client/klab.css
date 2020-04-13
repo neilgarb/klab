@@ -245,8 +245,15 @@ input[type=text]:invalid:not(:focus) {
 
 img.header {
   width: 50px;
+  height: 75px;
   border-radius: 4px;
   align-self: center;
+}
+
+img.header.home {
+  width: 140px;
+  height: 209px;
+  margin-bottom: 10px;
 }
 
 h1 {
