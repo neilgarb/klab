@@ -21,7 +21,7 @@ function init() {
 }
 
 function connect() {
-  ws = new WebSocket('ws://localhost:8080/ws');
+  ws = new WebSocket('ws://' + document.location.host + '/ws');
   ws.onopen = function() {
     console.log('ws open');
     $overlay.hide();
@@ -40,9 +40,9 @@ function connect() {
 function showHome() {
   $klab.html(`
 <div class="klab-home">
-  <img src="jack.png" class="header">
+  <img src="/client/jack.png" class="header">
   <h1>Jassus, boet!</h1>
-  <p>A multiplayer Klabberjas game</p>
+  <p>A multiplayer Klaberjass game</p>
   <div class="buttons">
     <button class="button new-game">New game</button>
     <button class="button join-game">Join game</button>
@@ -62,7 +62,7 @@ function showHome() {
 function showNewGame() {
   $klab.html(`
 <div class="klab-new-game">
-  <img src="jack.png" class="header">
+  <img src="/client/jack.png" class="header">
   <h1>Jassus, boet!</h1>
   <form autocomplete="off">
     <label class="name">
@@ -178,7 +178,7 @@ function showNewGame() {
 function showJoinGame() {
   $klab.html(`
 <div class="klab-join-game">
-  <img src="jack.png" class="header">
+  <img src="/client/jack.png" class="header">
   <h1>Jassus, boet!</h1>
   <form autocomplete="off">
     <label class="code">
@@ -230,7 +230,7 @@ function showJoinGame() {
 function showGameLobbyIndividual(data) {
   $klab.html(`
 <div class="klab-game-lobby individual">
-  <img src="jack.png" class="header">
+  <img src="/client/jack.png" class="header">
   <h1>Jassus, boet!</h1>
   
   <p>Game code</p>
@@ -309,7 +309,7 @@ function showGame(data) {
   $klab.html(`
 <div class="klab-game">
   <div class="header">
-    <img src="jack.png">
+    <img src="/client/jack.png">
     <h1>Jassus, boet!</h1>
     <div class="divider"></div>
     <div class="actions">
@@ -694,7 +694,7 @@ function showYourTurn(data) {
     e.preventDefault();
     $klab.find('.bid_options').hide();
     $klab.find('.trick').removeClass('have_announcement');
-    $player.find('.card').removeClass('.played');
+    $player.find('.card').removeClass('played');
     $(this).addClass('played');
     let card = {
       suit: +($(this).attr('data-suit')),
@@ -908,7 +908,7 @@ function playSound(name) {
   }
 
   let xhr = new XMLHttpRequest();
-  xhr.open('GET', name + '.mp3');
+  xhr.open('GET', '/client/' + name + '.mp3');
   xhr.responseType = 'arraybuffer';
   xhr.addEventListener('load', () => {
     let playsound = (audioBuffer) => {
