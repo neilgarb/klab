@@ -498,7 +498,7 @@ function showGameScores(data) {
 }
 
 async function dealRound(myIdx, data) {
-  let $deck = $klab.find('.deck');
+  let $deck = $klab.find('.deck').show();
   $deck.html('');
 
   playSound('shuffle');
@@ -506,7 +506,7 @@ async function dealRound(myIdx, data) {
     let $card = $(`<div class="card down"></div>`);
 
     let offset = i*2;
-    if (offset>6) {
+    if (offset>=6) {
       continue
     }
 
@@ -556,7 +556,7 @@ async function dealRound(myIdx, data) {
     }
   }
 
-  let $cardUp = $klab.find('.card_up');
+  let $cardUp = $klab.find('.card_up').show();
   $cardUp.append(makeCard(data.card_up.suit, data.card_up.rank));
   playSound('card');
 
@@ -600,6 +600,8 @@ function showBidOptions(data) {
     $bidOptions.find('button.pass').hide();
   }
 
+  playSound('your_turn');
+
   $bidOptions.find('button.pass').click(function(e) {
     e.preventDefault();
     $bidOptions.html('');
@@ -639,8 +641,8 @@ async function setTrumps(positions, data) {
 
   sortCards();
 
-  let $trumps = $klab.find('.trumps');
-  $trumps.show().html(`Trumps: <span class="trumps-symbol trumps-symbol-${data.trumps}"></span>`);
+  let $trumps = $klab.find('.trumps').show();
+  $trumps.html(`Trumps: <span class="trumps-symbol trumps-symbol-${data.trumps}"></span>`);
 }
 
 function sortCards() {
@@ -699,6 +701,8 @@ function showYourTurn(data) {
       $trick.removeClass('have_announcement');
     });
   }
+
+  playSound('your_turn');
 
   $player.find('.card.up').click(function(e) {
     e.preventDefault();
@@ -764,11 +768,11 @@ function showTrickWon(positions, data) {
         targetY = 0;
       }
       let $trick = $klab.find('.trick');
+      let $trickCards = $trick.find('.card');
       $trick.find('.card').css('transform', `translateX(${targetX}px) translateY(${targetY}px)`);
       playSound('trick_won');
       setTimeout(function() {
-        $klab.find('.trick').html('');
-        $klab.find('.card.won').remove();
+        $trickCards.remove();
       }, 500);
     }
   }

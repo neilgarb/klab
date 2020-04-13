@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"math/rand"
 	"sort"
 	"strings"
@@ -106,14 +107,14 @@ func (g *Game) Join(conn *websocket.Conn, name string) error {
 	}
 
 	for i, p := range g.players {
-		websocket.JSON.Send(p.conn, MakeMessage("game_lobby", GameLobbyMessage{
+		g.send(p.conn, "game_lobby", GameLobbyMessage{
 			Code:            g.code,
 			Host:            i == 0,
 			CanStart:        g.playerCount == len(g.players),
 			PlayerCount:     g.playerCount,
 			PlayerNames:     playerNames,
 			GameDescription: gameDescription,
-		}))
+		})
 	}
 
 	return nil
@@ -137,13 +138,13 @@ func (g *Game) MaybeLeave(conn *websocket.Conn) bool {
 	g.players = newPlayers
 
 	for i, p := range g.players {
-		websocket.JSON.Send(p.conn, MakeMessage("game_lobby", GameLobbyMessage{
+		g.send(p.conn, "game_lobby", GameLobbyMessage{
 			Code:        g.code,
 			Host:        i == 0,
 			CanStart:    g.playerCount == len(g.players),
 			PlayerCount: g.playerCount,
 			PlayerNames: playerNames,
-		}))
+		})
 	}
 
 	return res
@@ -180,10 +181,10 @@ func (g *Game) MaybeStart(conn *websocket.Conn) (bool, error) {
 	}
 
 	for _, p := range g.players {
-		websocket.JSON.Send(p.conn, MakeMessage("game_started", GameStartedMessage{
+		g.send(p.conn, "game_started", GameStartedMessage{
 			Name:        p.name,
 			PlayerNames: playerNames,
-		}))
+		})
 	}
 
 	g.ch = make(chan *ConnMessage)
@@ -215,9 +216,9 @@ func (g *Game) run() {
 
 		g.mu.Lock()
 		for _, p := range g.players {
-			websocket.JSON.Send(p.conn, MakeMessage("round_started", RoundStartedMessage{
+			g.send(p.conn, "round_started", RoundStartedMessage{
 				Dealer: dealer,
-			}))
+			})
 		}
 		g.mu.Unlock()
 
@@ -244,13 +245,13 @@ func (g *Game) run() {
 			extra[p.name] = append(extra[p.name], deck.Deal(2)...)
 		}
 		for _, p := range g.players {
-			websocket.JSON.Send(p.conn, MakeMessage("round_dealt", RoundDealtMessage{
+			g.send(p.conn, "round_dealt", RoundDealtMessage{
 				PlayerCount: len(g.players),
 				Dealer:      dealer,
 				DeckSize:    deck.Size(),
 				Cards:       hands[p.name],
 				CardUp:      cardUp,
-			}))
+			})
 		}
 		g.mu.Unlock()
 
@@ -266,11 +267,11 @@ func (g *Game) run() {
 			bidderConn := g.players[toBid].conn
 			g.mu.Unlock()
 
-			websocket.JSON.Send(bidderConn, MakeMessage("bid_request", BidRequestMessage{
+			g.send(bidderConn, "bid_request", BidRequestMessage{
 				CardUp: cardUp,
 				Round2: round2,
 				Bimah:  round2 && toBid == dealer,
-			}))
+			})
 
 			for m := range g.ch {
 				if m.Message.Type != "bid" {
@@ -299,10 +300,10 @@ func (g *Game) run() {
 
 						g.mu.Lock()
 						for _, p := range g.players {
-							websocket.JSON.Send(p.conn, MakeMessage("speech", SpeechMessage{
+							g.send(p.conn, "speech", SpeechMessage{
 								Player:  toBid,
 								Message: "Play",
-							}))
+							})
 						}
 						g.mu.Unlock()
 
@@ -315,10 +316,10 @@ func (g *Game) run() {
 
 					g.mu.Lock()
 					for _, p := range g.players {
-						websocket.JSON.Send(p.conn, MakeMessage("speech", SpeechMessage{
+						g.send(p.conn, "speech", SpeechMessage{
 							Player:  toBid,
 							Message: "Pass",
-						}))
+						})
 					}
 					g.mu.Unlock()
 
@@ -338,10 +339,10 @@ func (g *Game) run() {
 
 						g.mu.Lock()
 						for _, p := range g.players {
-							websocket.JSON.Send(p.conn, MakeMessage("speech", SpeechMessage{
+							g.send(p.conn, "speech", SpeechMessage{
 								Player:  toBid,
 								Message: trumps.String(),
-							}))
+							})
 						}
 						g.mu.Unlock()
 
@@ -352,10 +353,10 @@ func (g *Game) run() {
 
 					g.mu.Lock()
 					for _, p := range g.players {
-						websocket.JSON.Send(p.conn, MakeMessage("speech", SpeechMessage{
+						g.send(p.conn, "speech", SpeechMessage{
 							Player:  toBid,
 							Message: "Pass",
-						}))
+						})
 					}
 					g.mu.Unlock()
 
@@ -374,11 +375,11 @@ func (g *Game) run() {
 
 		g.mu.Lock()
 		for _, p := range g.players {
-			websocket.JSON.Send(p.conn, MakeMessage("trumps", TrumpsMessage{
+			g.send(p.conn, "trumps", TrumpsMessage{
 				Trumps:     int(trumps),
 				TookOn:     tookOn,
 				ExtraCards: extra[p.name],
-			}))
+			})
 		}
 		g.mu.Unlock()
 
@@ -420,9 +421,9 @@ func (g *Game) run() {
 						}
 					}
 				}
-				websocket.JSON.Send(playerConn, MakeMessage("your_turn", YourTurnMessage{
+				g.send(playerConn, "your_turn", YourTurnMessage{
 					AnnounceBonus: announceBonus,
-				}))
+				})
 
 				var maxTrickTrump int
 				for _, t := range trick {
@@ -495,10 +496,10 @@ func (g *Game) run() {
 
 						g.mu.Lock()
 						for _, p := range g.players {
-							websocket.JSON.Send(p.conn, MakeMessage("speech", SpeechMessage{
+							g.send(p.conn, "speech", SpeechMessage{
 								Player:  trickPlayerIdx,
 								Message: announceBonus.String(),
-							}))
+							})
 						}
 						g.mu.Unlock()
 
@@ -553,10 +554,10 @@ func (g *Game) run() {
 									bonuses[playerName], BonusBella)
 								g.mu.Lock()
 								for _, p := range g.players {
-									websocket.JSON.Send(p.conn, MakeMessage("speech", SpeechMessage{
+									g.send(p.conn, "speech", SpeechMessage{
 										Player:  trickPlayerIdx,
 										Message: "Bella",
-									}))
+									})
 								}
 								g.mu.Unlock()
 							}
@@ -567,11 +568,11 @@ func (g *Game) run() {
 					// Send the updated trick to all players.
 					g.mu.Lock()
 					for _, p := range g.players {
-						websocket.JSON.Send(p.conn, MakeMessage("trick", TrickMessage{
+						g.send(p.conn, "trick", TrickMessage{
 							PlayerCount: g.playerCount,
 							FirstPlayer: toPlay,
 							Cards:       trick,
-						}))
+						})
 					}
 					g.mu.Unlock()
 
@@ -635,10 +636,10 @@ func (g *Game) run() {
 						(highCard.rank == b.HighCard().rank && highCard.suit == trumps) {
 
 						for _, p := range g.players {
-							websocket.JSON.Send(p.conn, MakeMessage("speech", SpeechMessage{
+							g.send(p.conn, "speech", SpeechMessage{
 								Player:  announcer,
 								Message: "It's yours.",
-							}))
+							})
 						}
 
 						continue
@@ -655,10 +656,10 @@ func (g *Game) run() {
 					message += "."
 
 					for _, p := range g.players {
-						websocket.JSON.Send(p.conn, MakeMessage("speech", SpeechMessage{
+						g.send(p.conn, "speech", SpeechMessage{
 							Player:  announcer,
 							Message: message,
-						}))
+						})
 					}
 				}
 
@@ -668,12 +669,12 @@ func (g *Game) run() {
 					announcedBonuses[highCardPlayerName].Bonus)
 
 				for _, p := range g.players {
-					websocket.JSON.Send(p.conn, MakeMessage("bonus_awarded", BonusAwardedMessage{
+					g.send(p.conn, "bonus_awarded", BonusAwardedMessage{
 						Player:       highCardPlayer,
 						Bonus:        announcedBonuses[highCardPlayerName].Bonus.String(),
 						Cards:        announcedBonuses[highCardPlayerName].Cards,
 						CurrentTrick: trick,
-					}))
+					})
 				}
 
 				g.mu.Unlock()
@@ -695,11 +696,11 @@ func (g *Game) run() {
 				wonCards[bestPlayerName] = append(wonCards[bestPlayerName], c)
 			}
 			for _, p := range g.players {
-				websocket.JSON.Send(p.conn, MakeMessage("trick_won", TrickWonMessage{
+				g.send(p.conn, "trick_won", TrickWonMessage{
 					PlayerCount: g.playerCount,
 					FirstPlayer: toPlay,
 					Winner:      bestPlayer,
-				}))
+				})
 			}
 			g.mu.Unlock()
 
@@ -820,11 +821,11 @@ func (g *Game) run() {
 			total[i] = scores[p.name]
 		}
 		for _, p := range g.players {
-			websocket.JSON.Send(p.conn, MakeMessage("game_scores", GameScoresMessage{
+			g.send(p.conn, "game_scores", GameScoresMessage{
 				PlayerNames: playerNames,
 				Total:       total,
 				Scores:      rounds,
-			}))
+			})
 		}
 		g.mu.Unlock()
 
@@ -843,7 +844,7 @@ func (g *Game) run() {
 
 	g.mu.Lock()
 	for _, p := range g.players {
-		websocket.JSON.Send(p.conn, MakeMessage("game_over", GameOverMessage{}))
+		g.send(p.conn, "game_over", GameOverMessage{})
 	}
 	g.mu.Unlock()
 }
@@ -921,4 +922,9 @@ func (g *Game) MaybePlay(conn *websocket.Conn, msg *Message) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (g *Game) send(conn *websocket.Conn, typ string, data interface{}) {
+	log.Printf("%s -> %s: %s %+v", g.code, conn.Request().RemoteAddr, typ, data)
+	websocket.JSON.Send(conn, MakeMessage(typ, data))
 }
