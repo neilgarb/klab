@@ -5,10 +5,11 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
-	"net/http/pprof"
 	"os"
 	"path"
+	"strings"
 	"time"
+	"html/template"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/neilgarb/klab"
@@ -25,13 +26,7 @@ func main() {
 	r := httprouter.New()
 
 	r.GET("/ws", websocketHandler)
-	r.HandlerFunc("GET", "/debug/pprof/profile", pprof.Profile)
-	r.HandlerFunc("GET", "/debug/pprof/symbol", pprof.Symbol)
-	r.HandlerFunc("GET", "/debug/pprof/", pprof.Index)
-	r.HandlerFunc("GET", "/debug/pprof/block", pprof.Index)
-	r.HandlerFunc("GET", "/debug/pprof/goroutine", pprof.Index)
-	r.HandlerFunc("GET", "/debug/pprof/heap", pprof.Index)
-	r.HandlerFunc("GET", "/debug/pprof/threadcreate", pprof.Index)
+	r.GET("/", homeHandler)
 
 	wd, err := os.Getwd()
 	if err != nil {
@@ -66,4 +61,38 @@ func newConn(conn *websocket.Conn) {
 			}
 		}
 	}
+}
+
+var csp = strings.Join([]string{
+	"default-src 'self'; ",
+	"img-src 'self'; ",
+	"media-src 'self'; ",
+	"script-src 'self'; ",
+	"connect-src 'self'; ",
+	"font-src 'self' https://fonts.gstatic.com; ",
+	"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;",
+}, "")
+
+const homeT = `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link href="https://fonts.googleapis.com/css2?family=Kranky&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="client/klab.css">
+  <meta name="viewport" content="width=860,user-scalable=no">
+</head>
+<body>
+  <div id="klab"></div>
+  <div id="overlay" style="display: none">Connecting...</div>
+  <div id="error" style="display: none"></div>
+  <div id="round_scores" style="display: none"></div>
+  <div id="game_scores" style="display: none"></div>
+  <script src="client/jquery-3.4.1.min.js"></script>
+  <script src="client/klab.js"></script>
+</body>
+</html>`
+
+func homeHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	w.Header().Set("Content-Security-Policy", csp)
+	template.Must(template.New("home").Parse(homeT)).Execute(w, nil)
 }
