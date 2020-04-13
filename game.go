@@ -103,7 +103,7 @@ func (g *Game) Join(conn *websocket.Conn, name string) error {
 	if g.playerCount == 2 || g.playerCount == 4 {
 		gameDescription = fmt.Sprintf("Play until one player has at least %d points", g.maxScore)
 	} else if g.playerCount == 3 {
-		gameDescription = fmt.Sprintf("Play %d single rounds and 3 double rounds", g.roundCount - 3)
+		gameDescription = fmt.Sprintf("Play %d single rounds and 3 double rounds", g.roundCount-3)
 	}
 
 	for i, p := range g.players {
@@ -715,26 +715,38 @@ func (g *Game) run() {
 		g.mu.Unlock()
 
 		// Calculate scores.
+		roundScoresMessage := RoundScoresMessage{
+			Title: fmt.Sprintf("Round %d scores", len(rounds) + 1),
+			Scores: make(map[string]RoundScores),
+		}
 		roundScores := make(map[string]int)
 		for k, v := range wonCards {
 			for _, vv := range v {
+				var score int
 				switch vv.rank {
 				case RankJack:
-					roundScores[k] += 2
+					score = 2
 				case RankQueen:
-					roundScores[k] += 3
+					score = 3
 				case RankKing:
-					roundScores[k] += 4
+					score = 4
 				case RankTen:
-					roundScores[k] += 10
+					score = 10
 				case RankAce:
-					roundScores[k] += 11
+					score = 11
 				}
+				roundScores[k] += score
+				m := roundScoresMessage.Scores[k]
+				m.WonCards = append(m.WonCards, RoundScoreCard{score, vv})
+				roundScoresMessage.Scores[k] = m
 			}
 		}
 		for k, v := range bonuses {
 			for _, vv := range v {
 				roundScores[k] += vv.Value()
+				m := roundScoresMessage.Scores[k]
+				m.Bonuses = append(m.Bonuses, RoundScoreBonus{vv.Value(), vv.String()})
+				roundScoresMessage.Scores[k] = m
 			}
 		}
 
@@ -799,6 +811,20 @@ func (g *Game) run() {
 			// TODO: 4 players
 		}
 
+		time.Sleep(2 * time.Second)
+
+		// Show calculation of round scores.
+		g.mu.Lock()
+		for _, p := range g.players {
+			roundScoresMessage.PlayerNames = append(
+				roundScoresMessage.PlayerNames, p.name)
+		}
+		for _, p := range g.players {
+			g.send(p.conn, "round_scores", roundScoresMessage)
+		}
+		g.mu.Unlock()
+
+		// Add round scores to game scores.
 		var maxScore int
 		round := make([]int, 0, g.playerCount)
 		g.mu.Lock()
@@ -812,9 +838,9 @@ func (g *Game) run() {
 		g.mu.Unlock()
 		rounds = append(rounds, round)
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(15 * time.Second)
 
-		// Show scores.
+		// Show game scores.
 		g.mu.Lock()
 		total := make([]int, g.playerCount)
 		for i, p := range g.players {

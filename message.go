@@ -102,6 +102,27 @@ type BonusAwardedMessage struct {
 	CurrentTrick []Card `json:"current_trick"`
 }
 
+type RoundScoresMessage struct {
+	Title       string                 `json:"title"`
+	PlayerNames []string               `json:"player_names"`
+	Scores      map[string]RoundScores `json:"scores"`
+}
+
+type RoundScores struct {
+	WonCards []RoundScoreCard  `json:"won_cards"`
+	Bonuses  []RoundScoreBonus `json:"bonuses"`
+}
+
+type RoundScoreCard struct {
+	Score int  `json:"score"`
+	Card  Card `json:"card"`
+}
+
+type RoundScoreBonus struct {
+	Score       int    `json:"score"`
+	Description string `json:"description"`
+}
+
 type GameOverMessage struct {
 }
 

@@ -1,52 +1,19 @@
 $(init);
 
-let $klab, $overlay, $error, $scores;
+let $klab, $overlay, $error, $roundScores, $gameScores;
 let ws;
-
-let sounds = {};
-
-function playSound(name) {
-  let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-  if (sounds[name]) {
-    sounds[name][0].stop();
-    let source = audioCtx.createBufferSource();
-    source.buffer = sounds[name][1];
-    source.connect(audioCtx.destination);
-    source.loop = false;
-    source.start();
-    sounds[name] = [source, sounds[name][1]];
-    return;
-  }
-
-  let xhr = new XMLHttpRequest();
-  xhr.open('GET', name + '.mp3');
-  xhr.responseType = 'arraybuffer';
-  xhr.addEventListener('load', () => {
-    let playsound = (audioBuffer) => {
-      let source = audioCtx.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(audioCtx.destination);
-      source.loop = false;
-      source.start();
-
-      sounds[name] = [source, audioBuffer];
-    };
-    audioCtx.decodeAudioData(xhr.response).then(playsound);
-  });
-  xhr.send();
-}
 
 function init() {
   $klab = $('#klab');
   $overlay = $('#overlay').show();
   $error = $('#error');
-  $scores = $('#scores');
+  $roundScores = $('#round_scores');
+  $gameScores = $('#game_scores');
 
-  $klab.on('mouseover', '.button:not(:disabled)', function() {
+  $(document).on('mouseover', '.button:not(:disabled)', function() {
     playSound('button');
   });
-  $klab.on('mouseover', '.player.your_turn .card', function() {
+  $(document).on('mouseover', '.player.your_turn .card', function() {
     playSound('card');
   });
 
@@ -344,6 +311,10 @@ function showGame(data) {
   <div class="header">
     <img src="jack.png">
     <h1>Jassus, boet!</h1>
+    <div class="divider"></div>
+    <div class="actions">
+      <button class="button scores">Scores</button>
+    </div>
   </div>
   <div class="table">
     <div class="deck"></div>
@@ -404,7 +375,13 @@ function showGame(data) {
     let msg = JSON.parse(j.data);
     switch (msg.type) {
       case 'game_scores':
-        showGameScores(msg.data);
+        $roundScores.hide();
+        $klab.find('.trumps').hide();
+        $klab.find('.trick').hide();
+        $klab.find('.deck').hide();
+        $klab.find('.card_up').hide();
+
+        showGameScores(msg.data, true);
         break;
       case 'round_started':
         moveDealer(msg.data);
@@ -433,6 +410,9 @@ function showGame(data) {
       case 'bonus_awarded':
         showBonusAwarded(positions, msg.data);
         break;
+      case 'round_scores':
+        showRoundScores(msg.data);
+        break;
       case 'game_over':
         showHome();
         break;
@@ -441,22 +421,30 @@ function showGame(data) {
         break;
     }
   };
+
+  $klab.find('.header .actions .button.scores').click(function(e) {
+    e.preventDefault();
+    showGameScores(null, false);
+  });
 }
 
 function moveDealer(data) {
-  $scores.hide();
+  $gameScores.hide();
   $klab.find('.took_on').hide();
   $klab.find('.players .player .dealer').hide();
   $klab.find('.players .player[data-pos=' + data.dealer + '] .dealer').show();
 }
 
-function showGameScores(data) {
-  $klab.find('.trumps').hide();
-  $klab.find('.trick').hide();
-  $klab.find('.deck').hide();
-  $klab.find('.card_up').hide();
+let scores = null;
 
-  $scores.html(`
+function showGameScores(data, sound) {
+  if (data) {
+    scores = data;
+  } else {
+    data = scores;
+  }
+
+  $gameScores.html(`
 <h2>🏆 Scores 🏆</h2>
 <div class="names"><div>Round #</div></div>
 <div class="rounds"></div>
@@ -464,35 +452,41 @@ function showGameScores(data) {
   <button class="button close">Close</button>
 </div>
 `);
-  $scores.show();
+  $gameScores.show();
 
-  let $names = $scores.find('.names');
-  for (let p of data.player_names) {
-    $names.append(`<div>${p}</div>`);
-  }
-
-  let $rounds = $scores.find('.rounds');
-  let i = 1;
-  for (let r of (data.scores || [])) {
-    let $round = $(`<div class="round"><div>${i}</div></div>`);
-    for (let s of r) {
-      let score = +s;
-      $round.append(`<div>${score}</div>`);
+  if (data) {
+    let $names = $gameScores.find('.names');
+    for (let p of data.player_names) {
+      $names.append(`<div>${p}</div>`);
     }
-    $rounds.append($round);
-    i++;
-  }
-  let $total = $(`<div class="round"><div>Total</div></div>`);
-  for (let t of data.total) {
-    $total.append($(`<div>${t}</div>`));
-  }
-  $rounds.append($total);
-  $rounds.scrollTop($rounds[0].scrollHeight);
 
-  let $close = $scores.find('.close');
+    let $rounds = $gameScores.find('.rounds');
+    let i = 1;
+    for (let r of (data.scores || [])) {
+      let $round = $(`<div class="round"><div>${i}</div></div>`);
+      for (let s of r) {
+        let score = +s;
+        $round.append(`<div>${score}</div>`);
+      }
+      $rounds.append($round);
+      i++;
+    }
+    let $total = $(`<div class="round"><div>Total</div></div>`);
+    for (let t of data.total) {
+      $total.append($(`<div>${t}</div>`));
+    }
+    $rounds.append($total);
+    $rounds.scrollTop($rounds[0].scrollHeight);
+  }
+
+  if (sound) {
+    playSound('scores');
+  }
+
+  let $close = $gameScores.find('.close');
   $close.click(function(e) {
     e.preventDefault();
-    $scores.hide();
+    $gameScores.hide();
   });
 }
 
@@ -698,6 +692,10 @@ function showYourTurn(data) {
 
   $player.find('.card.up').click(function(e) {
     e.preventDefault();
+    $klab.find('.bid_options').hide();
+    $klab.find('.trick').removeClass('have_announcement');
+    $player.find('.card').removeClass('.played');
+    $(this).addClass('played');
     let card = {
       suit: +($(this).attr('data-suit')),
       rank: +($(this).attr('data-rank'))
@@ -705,8 +703,6 @@ function showYourTurn(data) {
     sendMessage('play', {
       card: card,
     });
-    $player.find('.card').removeClass('.played');
-    $(this).addClass('played');
   });
 }
 
@@ -807,6 +803,47 @@ function showBonusAwarded(positions, data) {
   }
 }
 
+async function showRoundScores(data) {
+  $roundScores.html('').show();
+
+  $roundScores.append($(`<h2></h2>`).html(data.title));
+  $roundScores.append($(`<div class="wrapper"></div>`));
+
+  for (let p of data.player_names) {
+    let $div = $(`
+<div class="player_scores" data-player="${p}">
+  <h3>${p} - <span class="score">0</span></h3>
+  <div class="cards"></div>
+  <div class="bonuses"></div>
+</div>`);
+    $roundScores.find('.wrapper').append($div);
+  }
+
+  for (let p of data.player_names) {
+    let cards = data.scores[p].won_cards;
+    let bonuses = data.scores[p].bonuses;
+    let $div = $roundScores.find('div[data-player="' + p + '"]');
+
+    let sleep = Math.ceil(3000 / cards.length);
+    if (sleep > 300) {
+      sleep = 300;
+    }
+    for (let c of (cards || [])) {
+      $div.find('.cards').append(makeCard(c.card.suit, c.card.rank));
+      $div.find('.score').html(+$div.find('.score').html() + c.score);
+      playSound('card');
+      await new Promise(resolve => setTimeout(resolve, sleep));
+    }
+
+    for (let b of (bonuses || [])) {
+      $div.find('.bonuses').append($(`<span>${b.description} +${b.score}</span>`));
+      $div.find('.score').html(+$div.find('.score').html() + b.score);
+      playSound('bonus');
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+  }
+}
+
 function makeCard(suit, rank) {
   if (!suit || !rank) {
     return $(`<div class="card"></div>`);
@@ -853,3 +890,38 @@ function showError(msg) {
     $error.hide();
   });
 }
+
+let sounds = {};
+
+function playSound(name) {
+  let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  if (sounds[name]) {
+    sounds[name][0].stop();
+    let source = audioCtx.createBufferSource();
+    source.buffer = sounds[name][1];
+    source.connect(audioCtx.destination);
+    source.loop = false;
+    source.start();
+    sounds[name] = [source, sounds[name][1]];
+    return;
+  }
+
+  let xhr = new XMLHttpRequest();
+  xhr.open('GET', name + '.mp3');
+  xhr.responseType = 'arraybuffer';
+  xhr.addEventListener('load', () => {
+    let playsound = (audioBuffer) => {
+      let source = audioCtx.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioCtx.destination);
+      source.loop = false;
+      source.start();
+
+      sounds[name] = [source, audioBuffer];
+    };
+    audioCtx.decodeAudioData(xhr.response).then(playsound);
+  });
+  xhr.send();
+}
+

@@ -66,7 +66,60 @@ body, html {
   }
 }
 
-#scores {
+#round_scores {
+  position: absolute;
+  left: 50%;
+  top: 20px;
+  bottom: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  transform: translateX(-50%) rotate(1deg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 400px;
+  border: 8px solid green;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+  min-width: 800px;
+}
+
+#round_scores .wrapper {
+  overflow: auto;
+  width: 100%;
+}
+
+#round_scores .player_scores {
+  height: 170px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+#round_scores .cards {
+  margin: 0 50px -35px 0;
+}
+
+#round_scores .card {
+  display: inline-block;
+  position: relative;
+  transform: scale(0.5);
+  transform-origin: 50% 0;
+  margin-right: -52px;
+}
+
+#round_scores .bonuses span {
+  background: green;
+  color: white;
+  border-radius: 2px;
+  padding: 4px 8px;
+}
+
+#round_scores .bonuses span + span {
+  margin-left: 5px;
+}
+
+#game_scores {
   position: absolute;
   left: 50%;
   top: 20px;
@@ -82,14 +135,14 @@ body, html {
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
 }
 
-#scores .names {
+#game_scores .names {
   display: flex;
   flex-direction: row;
   align-items: center;
   margin: 0 20px;
 }
 
-#scores .names div {
+#game_scores .names div {
   text-align: center;
   border-right: 1px solid grey;
   border-bottom: 1px solid grey;
@@ -97,32 +150,32 @@ body, html {
   padding: 20px;
 }
 
-#scores .names div:last-child {
+#game_scores .names div:last-child {
   border-right: 0;
 }
 
-#scores .rounds {
+#game_scores .rounds {
   flex-grow: 1;
   overflow-y: auto;
 }
 
-#scores .rounds .round {
+#game_scores .rounds .round {
   display: flex;
   flex-direction: row;
 }
 
-#scores .rounds .round div {
+#game_scores .rounds .round div {
   width: 150px;
   padding: 5px 20px;
   text-align: center;
   border-right: 1px solid grey;
 }
 
-#scores .rounds .round div:last-child {
+#game_scores .rounds .round div:last-child {
   border-right: 0;
 }
 
-#scores .buttons {
+#game_scores .buttons {
   padding: 20px 0;
 }
 
@@ -317,11 +370,21 @@ p {
 .klab-game .header {
   display: flex;
   flex-direction: row;
+  width: 100%;
 }
 
 .klab-game .header img {
   height: 50px;
   margin: 5px;
+}
+
+.klab-game .header .divider {
+  flex-grow: 1;
+}
+
+.klab-game .header .actions {
+  display: flex;
+  align-items: center;
 }
 
 .klab-game .table {
@@ -502,7 +565,7 @@ p {
   opacity: 0.5;
 }
 
-.klab-game .card {
+.card {
   transition: .5s all;
 }
 
@@ -530,7 +593,7 @@ p {
 .klab-game .trumps-symbol-3 { background-position: -60px 0; }
 .klab-game .trumps-symbol-4 { background-position: -80px 0; }
 
-.klab-game .card {
+.card {
   width: 75px;
   height: 105px;
   position: absolute;
@@ -539,38 +602,38 @@ p {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.6);
 }
 
-.klab-game .card[data-suit="1"][data-rank="1"] { background-position: 0 0; }
-.klab-game .card[data-suit="1"][data-rank="2"] { background-position: -75px 0; }
-.klab-game .card[data-suit="1"][data-rank="3"] { background-position: -150px 0; }
-.klab-game .card[data-suit="1"][data-rank="4"] { background-position: -225px 0; }
-.klab-game .card[data-suit="1"][data-rank="5"] { background-position: -300px 0; }
-.klab-game .card[data-suit="1"][data-rank="6"] { background-position: -375px 0; }
-.klab-game .card[data-suit="1"][data-rank="7"] { background-position: -450px 0; }
-.klab-game .card[data-suit="1"][data-rank="8"] { background-position: -525px 0; }
-.klab-game .card[data-suit="2"][data-rank="1"] { background-position: 0 -105px; }
-.klab-game .card[data-suit="2"][data-rank="2"] { background-position: -75px -105px; }
-.klab-game .card[data-suit="2"][data-rank="3"] { background-position: -150px -105px; }
-.klab-game .card[data-suit="2"][data-rank="4"] { background-position: -225px -105px; }
-.klab-game .card[data-suit="2"][data-rank="5"] { background-position: -300px -105px; }
-.klab-game .card[data-suit="2"][data-rank="6"] { background-position: -375px -105px; }
-.klab-game .card[data-suit="2"][data-rank="7"] { background-position: -450px -105px; }
-.klab-game .card[data-suit="2"][data-rank="8"] { background-position: -525px -105px; }
-.klab-game .card[data-suit="3"][data-rank="1"] { background-position: 0 -210px; }
-.klab-game .card[data-suit="3"][data-rank="2"] { background-position: -75px -210px; }
-.klab-game .card[data-suit="3"][data-rank="3"] { background-position: -150px -210px; }
-.klab-game .card[data-suit="3"][data-rank="4"] { background-position: -225px -210px; }
-.klab-game .card[data-suit="3"][data-rank="5"] { background-position: -300px -210px; }
-.klab-game .card[data-suit="3"][data-rank="6"] { background-position: -375px -210px; }
-.klab-game .card[data-suit="3"][data-rank="7"] { background-position: -450px -210px; }
-.klab-game .card[data-suit="3"][data-rank="8"] { background-position: -525px -210px; }
-.klab-game .card[data-suit="4"][data-rank="1"] { background-position: 0 -315px; }
-.klab-game .card[data-suit="4"][data-rank="2"] { background-position: -75px -315px; }
-.klab-game .card[data-suit="4"][data-rank="3"] { background-position: -150px -315px; }
-.klab-game .card[data-suit="4"][data-rank="4"] { background-position: -225px -315px; }
-.klab-game .card[data-suit="4"][data-rank="5"] { background-position: -300px -315px; }
-.klab-game .card[data-suit="4"][data-rank="6"] { background-position: -375px -315px; }
-.klab-game .card[data-suit="4"][data-rank="7"] { background-position: -450px -315px; }
-.klab-game .card[data-suit="4"][data-rank="8"] { background-position: -525px -315px; }
+.card[data-suit="1"][data-rank="1"] { background-position: 0 0; }
+.card[data-suit="1"][data-rank="2"] { background-position: -75px 0; }
+.card[data-suit="1"][data-rank="3"] { background-position: -150px 0; }
+.card[data-suit="1"][data-rank="4"] { background-position: -225px 0; }
+.card[data-suit="1"][data-rank="5"] { background-position: -300px 0; }
+.card[data-suit="1"][data-rank="6"] { background-position: -375px 0; }
+.card[data-suit="1"][data-rank="7"] { background-position: -450px 0; }
+.card[data-suit="1"][data-rank="8"] { background-position: -525px 0; }
+.card[data-suit="2"][data-rank="1"] { background-position: 0 -105px; }
+.card[data-suit="2"][data-rank="2"] { background-position: -75px -105px; }
+.card[data-suit="2"][data-rank="3"] { background-position: -150px -105px; }
+.card[data-suit="2"][data-rank="4"] { background-position: -225px -105px; }
+.card[data-suit="2"][data-rank="5"] { background-position: -300px -105px; }
+.card[data-suit="2"][data-rank="6"] { background-position: -375px -105px; }
+.card[data-suit="2"][data-rank="7"] { background-position: -450px -105px; }
+.card[data-suit="2"][data-rank="8"] { background-position: -525px -105px; }
+.card[data-suit="3"][data-rank="1"] { background-position: 0 -210px; }
+.card[data-suit="3"][data-rank="2"] { background-position: -75px -210px; }
+.card[data-suit="3"][data-rank="3"] { background-position: -150px -210px; }
+.card[data-suit="3"][data-rank="4"] { background-position: -225px -210px; }
+.card[data-suit="3"][data-rank="5"] { background-position: -300px -210px; }
+.card[data-suit="3"][data-rank="6"] { background-position: -375px -210px; }
+.card[data-suit="3"][data-rank="7"] { background-position: -450px -210px; }
+.card[data-suit="3"][data-rank="8"] { background-position: -525px -210px; }
+.card[data-suit="4"][data-rank="1"] { background-position: 0 -315px; }
+.card[data-suit="4"][data-rank="2"] { background-position: -75px -315px; }
+.card[data-suit="4"][data-rank="3"] { background-position: -150px -315px; }
+.card[data-suit="4"][data-rank="4"] { background-position: -225px -315px; }
+.card[data-suit="4"][data-rank="5"] { background-position: -300px -315px; }
+.card[data-suit="4"][data-rank="6"] { background-position: -375px -315px; }
+.card[data-suit="4"][data-rank="7"] { background-position: -450px -315px; }
+.card[data-suit="4"][data-rank="8"] { background-position: -525px -315px; }
 
 .klab-game .player .cards {
   padding: 10px 0 10px 20px;
@@ -584,10 +647,6 @@ p {
   margin: 0 -20px 5px 0;
   transition: .2s transform;
   transform: none;
-}
-
-.klab-game .player .cards .card.played {
-  opacity: 0.5;
 }
 
 .klab-game .player .cards .card.bonus {
