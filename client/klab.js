@@ -346,13 +346,12 @@ function showGame(data) {
     <h1>Jassus, boet!</h1>
   </div>
   <div class="table">
-    <div class="players">
-    </div>
     <div class="deck"></div>
     <div class="card_up"></div>
     <div class="trick" style="display: none"></div>
     <div class="bid_options" style="display: none;"></div>
     <div class="trumps"></div>
+    <div class="players"></div>
   </div>
 </div>
 `);
@@ -663,14 +662,7 @@ function showSpeech(positions, data) {
     if (positions[i] !== data.player) {
       continue;
     }
-
-    let idx = +i + 1;
-    let find = '.player' + idx + ' .speech';
-    let $speech = $klab.find(find).html(data.message).show();
-    playSound('speech');
-    setTimeout(function() {
-      $speech.hide();
-    }, 4000);
+    addSpeech(i, data.message);
   }
 }
 
@@ -823,6 +815,24 @@ function makeCard(suit, rank) {
   return $(`
 <div class="card up" data-suit="${suit}" data-rank="${rank}">
 </div>`);
+}
+
+function addSpeech(position, message) {
+  let $speech = $klab.find('.player' + (+position+1) + ' .speech').show();
+
+  let $message = $(`<div></div>`).html(message);
+  $speech.append($message);
+
+  playSound('speech');
+
+  setTimeout(function() {
+    $message.remove();
+    if ($speech.find('div').length === 0) {
+      $speech.hide();
+    } else {
+      $speech.css('top', '' + (-27 - $speech.height()) + 'px');
+    }
+  }, 4000);
 }
 
 function sendMessage(typ, data) {
