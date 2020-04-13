@@ -15,6 +15,8 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+var addr = flag.String("addr", ":8080", "Listen address")
+
 func main() {
 	flag.Parse()
 
@@ -38,7 +40,7 @@ func main() {
 	r.ServeFiles("/client/*filepath", http.Dir(path.Join(wd, "/client")))
 
 	log.Println("Listening")
-	http.ListenAndServe(":8080", r)
+	http.ListenAndServe(*addr, r)
 }
 
 func websocketHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {

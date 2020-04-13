@@ -3,11 +3,53 @@ $(init);
 let $klab, $overlay, $error, $scores;
 let ws;
 
+let sounds = {};
+
+function playSound(name) {
+  let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  if (sounds[name]) {
+    sounds[name][0].stop();
+    let source = audioCtx.createBufferSource();
+    source.buffer = sounds[name][1];
+    source.connect(audioCtx.destination);
+    source.loop = false;
+    source.start();
+    sounds[name] = [source, sounds[name][1]];
+    return;
+  }
+
+  let xhr = new XMLHttpRequest();
+  xhr.open('GET', name + '.mp3');
+  xhr.responseType = 'arraybuffer';
+  xhr.addEventListener('load', () => {
+    let playsound = (audioBuffer) => {
+      let source = audioCtx.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioCtx.destination);
+      source.loop = false;
+      source.start();
+
+      sounds[name] = [source, audioBuffer];
+    };
+    audioCtx.decodeAudioData(xhr.response).then(playsound);
+  });
+  xhr.send();
+}
+
 function init() {
   $klab = $('#klab');
   $overlay = $('#overlay').show();
   $error = $('#error');
   $scores = $('#scores');
+
+  $klab.on('mouseover', '.button:not(:disabled)', function() {
+    playSound('button');
+  });
+  $klab.on('mouseover', '.player.your_turn .card', function() {
+    playSound('card');
+  });
+
   connect();
 }
 
@@ -412,6 +454,8 @@ function moveDealer(data) {
 function showGameScores(data) {
   $klab.find('.trumps').hide();
   $klab.find('.trick').hide();
+  $klab.find('.deck').hide();
+  $klab.find('.card_up').hide();
 
   $scores.html(`
 <h2>🏆 Scores 🏆</h2>
@@ -457,6 +501,7 @@ async function dealRound(myIdx, data) {
   let $deck = $klab.find('.deck');
   $deck.html('');
 
+  playSound('shuffle');
   for (let i = 0; i < data.deck_size; i ++) {
     let $card = $(`<div class="card down"></div>`);
 
@@ -469,6 +514,9 @@ async function dealRound(myIdx, data) {
     $card.css('top', '' + offset + 'px');
     $deck.append($card);
   }
+
+  await new Promise(resolve =>
+    setTimeout(() => resolve(), 2000));
 
   let $players = $klab.find('.players .player');
   $players.find('.cards').html('');
@@ -484,6 +532,7 @@ async function dealRound(myIdx, data) {
             $card = makeCard(data.cards[j].suit, data.cards[j].rank);
           }
           $cards.append($card);
+          playSound('card');
           resolve();
         }, 200);
       });
@@ -500,6 +549,7 @@ async function dealRound(myIdx, data) {
             $card = makeCard(data.cards[j+3].suit, data.cards[j+3].rank);
           }
           $cards.append($card);
+          playSound('card');
           resolve();
         }, 200);
       });
@@ -508,6 +558,7 @@ async function dealRound(myIdx, data) {
 
   let $cardUp = $klab.find('.card_up');
   $cardUp.append(makeCard(data.card_up.suit, data.card_up.rank));
+  playSound('card');
 
   for (i = 0; i < data.player_count; i++) {
     let idx = (dealTo+i) % data.player_count;
@@ -516,6 +567,7 @@ async function dealRound(myIdx, data) {
       await new Promise(function(resolve) {
         setTimeout(function() {
           $cards.append(makeCard(null, null));
+          playSound('card');
           resolve();
         }, 200);
       });
@@ -613,6 +665,7 @@ function showSpeech(positions, data) {
     let idx = +i + 1;
     let find = '.player' + idx + ' .speech';
     let $speech = $klab.find(find).html(data.message).show();
+    playSound('speech');
     setTimeout(function() {
       $speech.hide();
     }, 4000);
@@ -681,6 +734,7 @@ function showTrick(positions, data) {
     }
     $trick.append($card);
   }
+  playSound('card_played');
 
   let removeCardPlayer = (data.first_player + data.cards.length - 1) % data.player_count;
   for (let j in positions) {
@@ -711,6 +765,7 @@ function showTrickWon(positions, data) {
       }
       let $trick = $klab.find('.trick');
       $trick.find('.card').css('transform', `translateX(${targetX}px) translateY(${targetY}px)`);
+      playSound('trick_won');
       setTimeout(function() {
         $klab.find('.trick').html('');
         $klab.find('.card.won').remove();
