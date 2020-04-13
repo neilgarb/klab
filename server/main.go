@@ -77,7 +77,6 @@ const homeT = `<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
-  <link href="https://fonts.googleapis.com/css2?family=Kranky&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="client/klab.css">
   <meta name="viewport" content="width=860,user-scalable=no">
 </head>

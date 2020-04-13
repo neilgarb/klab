@@ -233,13 +233,13 @@ function showGameLobbyIndividual(data) {
   <img src="/client/jack.png" class="header">
   <h1>Jassus, boet!</h1>
   
-  <p>Game code</p>
+  <p class="label">Game code</p>
   <p class="code">${data.code}</p>
   
-  <p>Players</p>
+  <p class="label">Players</p>
   <div class="players"></div>
   
-  <p>Rules</p>
+  <p class="label">Rules</p>
   <p class="rules">${data.game_description}</p>
   
   <div class="buttons">
