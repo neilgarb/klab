@@ -108,6 +108,9 @@ type RoundScoresMessage struct {
 	Title       string                 `json:"title"`
 	PlayerNames []string               `json:"player_names"`
 	Scores      map[string]RoundScores `json:"scores"`
+	TookOn      int                    `json:"took_on"`
+	Pooled      bool                   `json:"pooled"`
+	Prima       bool                   `json:"prima"`
 }
 
 type RoundScores struct {

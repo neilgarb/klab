@@ -269,9 +269,9 @@ func (g *Game) run() {
 			g.mu.Unlock()
 
 			g.send(bidderConn, "bid_request", BidRequestMessage{
-				CardUp: cardUp,
-				Round2: round2,
-				Bimah:  round2 && toBid == dealer,
+				CardUp:  cardUp,
+				Round2:  round2,
+				Bimah:   round2 && toBid == dealer,
 				CanPool: g.playerCount == 3,
 			})
 
@@ -749,8 +749,11 @@ func (g *Game) run() {
 
 		// Calculate scores.
 		roundScoresMessage := RoundScoresMessage{
-			Title: fmt.Sprintf("Round %d scores", len(rounds) + 1),
+			Title:  fmt.Sprintf("Round %d scores", len(rounds)+1),
 			Scores: make(map[string]RoundScores),
+			TookOn: tookOn,
+			Pooled: pool,
+			Prima:  prima,
 		}
 		roundScores := make(map[string]int)
 		for k, v := range wonCards {

@@ -838,14 +838,30 @@ async function showRoundScores(data) {
   $roundScores.append($(`<h2></h2>`).html(data.title));
   $roundScores.append($(`<div class="wrapper"></div>`));
 
+  let i = 0;
   for (let p of data.player_names) {
     let $div = $(`
 <div class="player_scores" data-player="${p}">
-  <h3>${p} - <span class="score">0</span></h3>
+  <h3>
+    ${p} - <span class="score">0</span>
+    <span class="extra took_on" style="display: none">Took on</span>
+    <span class="extra prima" style="display: none">Prima</span>
+    <span class="extra pooled" style="display: none">Pooled</span>
+  </h3>
   <div class="cards"></div>
   <div class="bonuses"></div>
 </div>`);
     $roundScores.find('.wrapper').append($div);
+    if (data.took_on === i) {
+      $div.find('.took_on').show();
+      if (data.prima) {
+        $div.find('.prima').show();
+      }
+      if (data.pooled) {
+        $div.find('.pooled').show();
+      }
+    }
+    i ++;
   }
 
   for (let p of data.player_names) {
@@ -896,7 +912,7 @@ function addSpeech(position, message) {
     $message.remove();
     $speech.css('top', '' + (-27 - $speech.height()) + 'px');
     if ($speech.find('div').length === 0) {
-      $speech.fadeOut();
+      $speech.hide();
     }
   }, 4000);
 }

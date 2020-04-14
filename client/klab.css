@@ -88,6 +88,26 @@ body, html {
   width: 100%;
 }
 
+#round_scores h3 .extra {
+  font-size: 14px;
+  font-weight: normal;
+}
+
+#round_scores h3 .extra.took_on {
+  background: blue;
+  color: white;
+}
+
+#round_scores h3 .extra.prima {
+  background: darkorange;
+  color: white;
+}
+
+#round_scores h3 .extra.pooled {
+  background: red;
+  color: white;
+}
+
 #round_scores .player_scores {
   height: 170px;
   display: flex;
@@ -448,7 +468,7 @@ p {
   width: 500px;
   height: 165px;
   left: 50%;
-  top: 0;
+  top: 40px;
   transform: translateX(-50%);
 }
 
@@ -623,9 +643,9 @@ p {
   transition: .5s all;
 }
 
-.klab-game .trick .card.trick-player1 { transform: translateY(65px); }
+.klab-game .trick .card.trick-player1 { transform: translateY(35px); }
 .klab-game .trick .card.trick-player2 { transform: translateX(35px); }
-.klab-game .trick .card.trick-player3 { transform: translateY(-65px); }
+.klab-game .trick .card.trick-player3 { transform: translateY(-35px); }
 .klab-game .trick .card.trick-player4 { transform: translateX(-35px); }
 
 .klab-game .trumps {
