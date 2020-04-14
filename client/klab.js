@@ -580,6 +580,7 @@ function showBidOptions(data) {
     $bidOptions.html(`
 <button class="button play">Play</button>
 <button class="button pass">Pass</button>
+<div class="pool" style="display: none"><label><input type="checkbox" name="pool"> Pool</label></div>
 `);
   } else {
     $bidOptions.html(`
@@ -589,6 +590,7 @@ function showBidOptions(data) {
 <button class="button suit" data-suit="4">Spades</button>
 <button class="button suit" data-suit="0" style="display:none;">No trumps</button>
 <button class="button pass">Pass</button>
+<div class="pool" style="display: none"><label><input type="checkbox" name="pool"> Pool</label></div>
 `);
     $bidOptions.find('[data-suit=' + data.card_up.suit + ']').hide();
   }
@@ -596,25 +598,34 @@ function showBidOptions(data) {
     $bidOptions.find('button[data-suit=0]').show();
     $bidOptions.find('button.pass').hide();
   }
+  if (data.can_pool) {
+    $bidOptions.find('.pool').show();
+  }
 
   playSound('your_turn');
 
   $bidOptions.find('button.pass').click(function(e) {
     e.preventDefault();
     $bidOptions.html('');
-    sendMessage('bid', {'pass': true});
+    sendMessage('bid', {pass: true});
   });
 
   $bidOptions.find('button.play').click(function(e) {
     e.preventDefault();
+    sendMessage('bid', {
+      suit: data.card_up.suit,
+      pool: $bidOptions.find('.pool input').prop('checked'),
+    });
     $bidOptions.html('');
-    sendMessage('bid', {'suit': data.card_up.suit});
   });
 
   $bidOptions.find('button.suit').click(function(e) {
     e.preventDefault();
+    sendMessage('bid', {
+      suit: +$(this).attr('data-suit'),
+      pool: $bidOptions.find('.pool input').prop('checked'),
+    });
     $bidOptions.html('');
-    sendMessage('bid', {'suit': +$(this).attr('data-suit')});
   });
 }
 

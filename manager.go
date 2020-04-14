@@ -3,6 +3,7 @@ package klab
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"math/rand"
 	"strings"
 	"sync"
@@ -47,6 +48,8 @@ func (m *Manager) CreateGame(conn *websocket.Conn, msg CreateGameMessage) error 
 	m.gamesMu.Lock()
 	defer m.gamesMu.Unlock()
 
+	log.Printf("%s: create_game (%+v)", conn.Request().RemoteAddr, msg)
+
 	var code string
 	for {
 		code = makeGameCode()
@@ -88,6 +91,9 @@ func (m *Manager) JoinGame(conn *websocket.Conn, msg JoinGameMessage) error {
 	game, ok := m.games[code]
 	m.gamesMu.Unlock()
 
+	log.Printf("%s -> %s: %s (%+v)",
+		conn.Request().RemoteAddr, game.code, "join_game", msg)
+
 	if !ok {
 		return errors.New("game not found")
 	}
@@ -110,6 +116,8 @@ func (m *Manager) LeaveGame(conn *websocket.Conn) error {
 
 	for _, g := range m.games {
 		if g.MaybeLeave(conn) {
+			log.Printf("%s -> %s: %s",
+				conn.Request().RemoteAddr, g.code, "leave_game")
 			break
 		}
 	}
@@ -127,6 +135,8 @@ func (m *Manager) StartGame(conn *websocket.Conn) error {
 			return err
 		}
 		if ok {
+			log.Printf("%s -> %s: %s",
+				conn.Request().RemoteAddr, g.code, "start_game")
 			break
 		}
 	}
@@ -144,6 +154,8 @@ func (m *Manager) Play(conn *websocket.Conn, msg *Message) error {
 			return err
 		}
 		if ok {
+			log.Printf("%s -> %s: %s (%s)",
+				conn.Request().RemoteAddr, g.code, msg.Type, string(msg.Data))
 			break
 		}
 	}

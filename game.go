@@ -258,6 +258,7 @@ func (g *Game) run() {
 		time.Sleep(5 * time.Second)
 
 		var trumps Suit
+		var pool bool
 		var round2 bool
 		toBid := (dealer + 1) % g.playerCount
 
@@ -271,6 +272,7 @@ func (g *Game) run() {
 				CardUp: cardUp,
 				Round2: round2,
 				Bimah:  round2 && toBid == dealer,
+				CanPool: g.playerCount == 3,
 			})
 
 			for m := range g.ch {
@@ -288,6 +290,10 @@ func (g *Game) run() {
 					g.errCh <- err
 					continue
 				}
+				if bidMessage.Pool && g.playerCount != 3 {
+					g.errCh <- errors.New("you can only pool in a 3-player game")
+					continue
+				}
 
 				if !round2 {
 					if bidMessage.Pass {
@@ -296,13 +302,18 @@ func (g *Game) run() {
 						continue
 					} else {
 						trumps = cardUp.suit
+						pool = bidMessage.Pool
 						g.errCh <- nil
 
+						trumpsMessage := randomPlayMessage()
+						if pool {
+							trumpsMessage = "I pool you."
+						}
 						g.mu.Lock()
 						for _, p := range g.players {
 							g.send(p.conn, "speech", SpeechMessage{
 								Player:  toBid,
-								Message: "Play",
+								Message: trumpsMessage,
 							})
 						}
 						g.mu.Unlock()
@@ -314,11 +325,12 @@ func (g *Game) run() {
 					}
 					g.errCh <- nil
 
+					passMessage := randomPassMessage()
 					g.mu.Lock()
 					for _, p := range g.players {
 						g.send(p.conn, "speech", SpeechMessage{
 							Player:  toBid,
-							Message: "Pass",
+							Message: passMessage,
 						})
 					}
 					g.mu.Unlock()
@@ -335,13 +347,18 @@ func (g *Game) run() {
 						}
 
 						trumps = Suit(bidMessage.Suit)
+						pool = bidMessage.Pool
 						g.errCh <- nil
 
+						trumpsMessage := trumps.String()
+						if pool {
+							trumpsMessage = fmt.Sprintf("I pool you in %s.", trumps.String())
+						}
 						g.mu.Lock()
 						for _, p := range g.players {
 							g.send(p.conn, "speech", SpeechMessage{
 								Player:  toBid,
-								Message: trumps.String(),
+								Message: trumpsMessage,
 							})
 						}
 						g.mu.Unlock()
@@ -351,11 +368,12 @@ func (g *Game) run() {
 
 					g.errCh <- nil
 
+					passMessage := randomPassMessage()
 					g.mu.Lock()
 					for _, p := range g.players {
 						g.send(p.conn, "speech", SpeechMessage{
 							Player:  toBid,
-							Message: "Pass",
+							Message: passMessage,
 						})
 					}
 					g.mu.Unlock()
@@ -365,7 +383,22 @@ func (g *Game) run() {
 				}
 
 				trumps = Suit(bidMessage.Suit)
+				pool = bidMessage.Pool
 				g.errCh <- nil
+
+				trumpsMessage := trumps.String()
+				if pool {
+					trumpsMessage = fmt.Sprintf("I pool you in %s.", trumps.String())
+				}
+				g.mu.Lock()
+				for _, p := range g.players {
+					g.send(p.conn, "speech", SpeechMessage{
+						Player:  toBid,
+						Message: trumpsMessage,
+					})
+				}
+				g.mu.Unlock()
+
 				break BidLoop
 			}
 		}
@@ -750,12 +783,36 @@ func (g *Game) run() {
 			}
 		}
 
+		if pool {
+			var otherScore int
+			g.mu.Lock()
+			for i, p := range g.players {
+				if i == tookOn {
+					continue
+				}
+				otherScore += roundScores[p.name]
+			}
+			for i, p := range g.players {
+				if i == tookOn {
+					continue
+				}
+				roundScores[p.name] = otherScore
+			}
+			g.mu.Unlock()
+		}
+
+		g.mu.Lock()
+		tookOnName := g.players[tookOn].name
+		g.mu.Unlock()
+
 		var roundWinner string
 		var winningScore int
 		for k, v := range roundScores {
 			if v > winningScore {
 				roundWinner = k
 				winningScore = v
+			} else if v == winningScore && k == tookOnName {
+				roundWinner = k
 			}
 		}
 
@@ -769,11 +826,6 @@ func (g *Game) run() {
 		}
 		g.mu.Unlock()
 
-		var tookOnName string
-		g.mu.Lock()
-		tookOnName = g.players[tookOn].name
-		g.mu.Unlock()
-
 		if g.playerCount == 2 {
 			if roundWinnerIdx != tookOn {
 				roundScores[roundWinner] += roundScores[tookOnName]
@@ -783,15 +835,22 @@ func (g *Game) run() {
 			g.mu.Lock()
 			for _, p := range g.players {
 				if roundWinnerIdx == tookOn {
+					mod := 1
+					if pool {
+						mod *= 2
+					}
 					if p.name == roundWinner {
-						roundScores[p.name] = 2
+						roundScores[p.name] = 2 * mod
 					} else {
-						roundScores[p.name] = -1
+						roundScores[p.name] = -1 * mod
 					}
 				} else {
 					mod := 1
 					if prima {
 						mod = 2
+					}
+					if pool {
+						mod *= 2
 					}
 					if p.name == tookOnName {
 						roundScores[p.name] = -2 * mod
@@ -953,4 +1012,31 @@ func (g *Game) MaybePlay(conn *websocket.Conn, msg *Message) (bool, error) {
 func (g *Game) send(conn *websocket.Conn, typ string, data interface{}) {
 	log.Printf("%s -> %s: %s %+v", g.code, conn.Request().RemoteAddr, typ, data)
 	websocket.JSON.Send(conn, MakeMessage(typ, data))
+}
+
+func randomPlayMessage() string {
+	messages := []string{
+		"Play",
+		"Play",
+		"Play",
+		"Play",
+		"Giddyup",
+		"Let's go",
+		"Ya why not",
+		"I'll play",
+	}
+	return messages[rand.Intn(len(messages))]
+}
+
+func randomPassMessage() string {
+	messages := []string{
+		"Pass",
+		"Pass",
+		"Pass",
+		"Pass",
+		"No",
+		"No thanks",
+		"No no",
+	}
+	return messages[rand.Intn(len(messages))]
 }

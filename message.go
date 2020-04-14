@@ -54,9 +54,10 @@ type RoundDealtMessage struct {
 }
 
 type BidRequestMessage struct {
-	CardUp Card `json:"card_up"`
-	Round2 bool `json:"round2"`
-	Bimah  bool `json:"bimah"`
+	CardUp  Card `json:"card_up"`
+	Round2  bool `json:"round2"`
+	Bimah   bool `json:"bimah"`
+	CanPool bool `json:"can_pool"`
 }
 
 type SpeechMessage struct {
@@ -67,6 +68,7 @@ type SpeechMessage struct {
 type BidMessage struct {
 	Pass bool `json:"pass"`
 	Suit int  `json:"suit"`
+	Pool bool `json:"pool"`
 }
 
 type TrumpsMessage struct {

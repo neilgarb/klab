@@ -567,6 +567,10 @@ p {
   transform: translateX(-250px) translateY(-50%);
 }
 
+.klab-game .bid_options .pool label {
+  cursor: pointer;
+}
+
 .klab-game .button + .button {
   margin: 0 8px 8px 0;
 }
