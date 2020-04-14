@@ -40,6 +40,12 @@ func (m *Manager) Handle(conn *websocket.Conn, msg *Message) error {
 		return m.StartGame(conn)
 	case "bid", "play", "announce_bonus":
 		return m.Play(conn, msg)
+	case "speech":
+		var data SpeechMessage
+		if err := json.Unmarshal(msg.Data, &data); err != nil {
+			return err
+		}
+		return m.Speech(conn, data.Message)
 	}
 	return errors.New("unknown message type")
 }
@@ -156,6 +162,27 @@ func (m *Manager) Play(conn *websocket.Conn, msg *Message) error {
 		if ok {
 			log.Printf("%s -> %s: %s (%s)",
 				conn.Request().RemoteAddr, g.code, msg.Type, string(msg.Data))
+			break
+		}
+	}
+
+	return nil
+}
+
+func (m *Manager) Speech(conn *websocket.Conn, message string) error {
+	if len(message) > 160 {
+		return errors.New("message too long")
+	}
+
+	m.gamesMu.Lock()
+	defer m.gamesMu.Unlock()
+
+	for _, g := range m.games {
+		ok, err := g.MaybeSay(conn, message)
+		if err != nil {
+			return err
+		}
+		if ok {
 			break
 		}
 	}

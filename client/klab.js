@@ -327,6 +327,10 @@ function showGame(data) {
     <div class="bid_options" style="display: none;"></div>
     <div class="trumps"></div>
     <div class="players"></div>
+    <div class="send_message">
+      <input type="text" name="message" placeholder="Message...">
+      <button class="button send">Send</button>
+    </div>
   </div>
 </div>
 `);
@@ -430,6 +434,16 @@ function showGame(data) {
     e.preventDefault();
     showGameScores(null, false);
   });
+
+  $klab.find('.send_message .button').click(function(e) {
+    say();
+  });
+
+  $klab.find('.send_message input').keypress(function(e) {
+    if (e.keyCode === 13) {
+      say();
+    }
+  })
 }
 
 function moveDealer(data) {
@@ -874,15 +888,15 @@ function addSpeech(position, message) {
 
   let $message = $(`<div></div>`).html(message);
   $speech.append($message);
+  $speech.css('top', '' + (-27 - $speech.height()) + 'px');
 
   playSound('speech');
 
   setTimeout(function() {
     $message.remove();
+    $speech.css('top', '' + (-27 - $speech.height()) + 'px');
     if ($speech.find('div').length === 0) {
-      $speech.hide();
-    } else {
-      $speech.css('top', '' + (-27 - $speech.height()) + 'px');
+      $speech.fadeOut();
     }
   }, 4000);
 }
@@ -940,3 +954,11 @@ function playSound(name) {
   xhr.send();
 }
 
+function say() {
+  let $message = $klab.find('.send_message input');
+  let message = $message.val();
+  $message.val('');
+  if (message.trim() !== '') {
+    sendMessage('speech', {message: message.trim()});
+  }
+}

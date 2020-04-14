@@ -431,7 +431,7 @@ p {
   width: 500px;
   height: 165px;
   left: 50%;
-  bottom: 0;
+  bottom: 40px;
   transform: translateX(-50%);
 }
 
@@ -459,6 +459,33 @@ p {
   top: 50%;
   transform: translateY(-50%) translateX(-168px) rotate(90deg);
   transform-origin: 50% 50%;
+}
+
+.klab-game .send_message {
+  position: absolute;
+  bottom: 9px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 480px;
+  display: flex;
+}
+
+.klab-game .send_message input {
+  flex-grow: 1;
+  padding: 1px 4px;
+  transform: none;
+  margin-right: 5px;
+  font-size: 12px;
+}
+
+.klab-game .send_message input:focus {
+  border: 0;
+}
+
+.klab-game .send_message .button {
+  padding: 4px 8px;
+  margin: 0;
+  font-size: 12px;
 }
 
 .klab-game .name {

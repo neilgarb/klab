@@ -1009,6 +1009,31 @@ func (g *Game) MaybePlay(conn *websocket.Conn, msg *Message) (bool, error) {
 	return true, nil
 }
 
+func (g *Game) MaybeSay(conn *websocket.Conn, message string) (bool, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+
+	player := -1
+	for i, p := range g.players {
+		if p.conn == conn {
+			player = i
+			break
+		}
+	}
+	if player == -1 {
+		return false, nil
+	}
+
+	for _, p := range g.players {
+		g.send(p.conn, "speech", SpeechMessage{
+			Player:  player,
+			Message: message,
+		})
+	}
+
+	return true, nil
+}
+
 func (g *Game) send(conn *websocket.Conn, typ string, data interface{}) {
 	log.Printf("%s -> %s: %s %+v", g.code, conn.Request().RemoteAddr, typ, data)
 	websocket.JSON.Send(conn, MakeMessage(typ, data))
