@@ -129,6 +129,12 @@ type RoundScoreBonus struct {
 }
 
 type GameOverMessage struct {
+	Positions []Position `json:"positions"`
+}
+
+type Position struct {
+	PlayerName string `json:"player_name"`
+	Score      int    `json:"score"`
 }
 
 func MakeMessage(typ string, data interface{}) *Message {

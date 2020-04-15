@@ -42,6 +42,8 @@ function connect() {
 }
 
 function showHome() {
+  $gameScores.hide();
+
   $klab.html(`
 <div class="klab-home">
   <img src="/client/jack.png" class="header home">
@@ -112,6 +114,10 @@ function showNewGame() {
     
     <div class="max-score">
       <span class="label">Play until score</span>
+      <label>
+        <input type="radio" name="max_score" value="101">
+        101
+      </label>
       <label>
         <input type="radio" name="max_score" value="501">
         501
@@ -422,7 +428,7 @@ function showGame(data) {
         showRoundScores(msg.data);
         break;
       case 'game_over':
-        showHome();
+        showGameOver(msg.data);
         break;
       case 'error':
         showError(msg.data);
@@ -463,7 +469,7 @@ function showGameScores(data, sound) {
   }
 
   $gameScores.html(`
-<h2>🏆 Scores 🏆</h2>
+<h2>Scores</h2>
 <div class="names"><div>Round #</div></div>
 <div class="rounds"></div>
 <div class="buttons">
@@ -887,6 +893,28 @@ async function showRoundScores(data) {
       await new Promise(resolve => setTimeout(resolve, 300));
     }
   }
+}
+
+function showGameOver(data) {
+  $roundScores.hide();
+  $gameScores.show();
+
+  playSound('scores');
+
+  $gameScores.html(`<h1>🏆 Game over 🏆</h1>`);
+
+  let i = 1;
+  for (let p of data.positions) {
+    $gameScores.append($(`<div class="position-${i}">${p.player_name} - ${p.score}</div>`));
+    i ++;
+  }
+
+  let $done = $(`<button class="button done">Main menu</button>`);
+  $done.on('click', function(e) {
+    e.preventDefault();
+    showHome();
+  });
+  $gameScores.append($done);
 }
 
 function makeCard(suit, rank) {

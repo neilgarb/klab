@@ -199,6 +199,38 @@ body, html {
   padding: 20px 0;
 }
 
+#game_scores h1 {
+  margin: 20px 0;
+}
+
+#game_scores .position-1 {
+  font-size: 24px;
+  color: gold;
+  margin-bottom: 10px;
+}
+
+#game_scores .position-2 {
+  font-size: 20px;
+  color: silver;
+  margin-bottom: 10px;
+}
+
+#game_scores .position-3 {
+  font-size: 16px;
+  color: darkorange;
+  margin-bottom: 10px;
+}
+
+#game_scores .position-4 {
+  font-size: 16px;
+  color: black;
+  margin-bottom: 10px;
+}
+
+#game_scores .button.done {
+  margin-top: 40px;
+}
+
 #error a {
   color: white;
   text-decoration: none;
@@ -671,43 +703,44 @@ p {
   width: 75px;
   height: 105px;
   position: absolute;
-  background: url(cards.png) no-repeat 0 -420px;
+  background: url(cards.png) no-repeat -75px -420px;
+  background-size: 975px 525px;
   border-radius: 5px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.6);
 }
 
-.card[data-suit="1"][data-rank="1"] { background-position: 0 0; }
-.card[data-suit="1"][data-rank="2"] { background-position: -75px 0; }
-.card[data-suit="1"][data-rank="3"] { background-position: -150px 0; }
-.card[data-suit="1"][data-rank="4"] { background-position: -225px 0; }
-.card[data-suit="1"][data-rank="5"] { background-position: -300px 0; }
-.card[data-suit="1"][data-rank="6"] { background-position: -375px 0; }
-.card[data-suit="1"][data-rank="7"] { background-position: -450px 0; }
-.card[data-suit="1"][data-rank="8"] { background-position: -525px 0; }
-.card[data-suit="2"][data-rank="1"] { background-position: 0 -105px; }
-.card[data-suit="2"][data-rank="2"] { background-position: -75px -105px; }
-.card[data-suit="2"][data-rank="3"] { background-position: -150px -105px; }
-.card[data-suit="2"][data-rank="4"] { background-position: -225px -105px; }
-.card[data-suit="2"][data-rank="5"] { background-position: -300px -105px; }
-.card[data-suit="2"][data-rank="6"] { background-position: -375px -105px; }
-.card[data-suit="2"][data-rank="7"] { background-position: -450px -105px; }
-.card[data-suit="2"][data-rank="8"] { background-position: -525px -105px; }
-.card[data-suit="3"][data-rank="1"] { background-position: 0 -210px; }
-.card[data-suit="3"][data-rank="2"] { background-position: -75px -210px; }
-.card[data-suit="3"][data-rank="3"] { background-position: -150px -210px; }
-.card[data-suit="3"][data-rank="4"] { background-position: -225px -210px; }
-.card[data-suit="3"][data-rank="5"] { background-position: -300px -210px; }
-.card[data-suit="3"][data-rank="6"] { background-position: -375px -210px; }
-.card[data-suit="3"][data-rank="7"] { background-position: -450px -210px; }
-.card[data-suit="3"][data-rank="8"] { background-position: -525px -210px; }
-.card[data-suit="4"][data-rank="1"] { background-position: 0 -315px; }
-.card[data-suit="4"][data-rank="2"] { background-position: -75px -315px; }
-.card[data-suit="4"][data-rank="3"] { background-position: -150px -315px; }
-.card[data-suit="4"][data-rank="4"] { background-position: -225px -315px; }
-.card[data-suit="4"][data-rank="5"] { background-position: -300px -315px; }
-.card[data-suit="4"][data-rank="6"] { background-position: -375px -315px; }
-.card[data-suit="4"][data-rank="7"] { background-position: -450px -315px; }
-.card[data-suit="4"][data-rank="8"] { background-position: -525px -315px; }
+.card[data-suit="1"][data-rank="1"] { background-position: -450px 0; }
+.card[data-suit="1"][data-rank="2"] { background-position: -525px 0; }
+.card[data-suit="1"][data-rank="3"] { background-position: -600px 0; }
+.card[data-suit="1"][data-rank="4"] { background-position: -675px 0; }
+.card[data-suit="1"][data-rank="5"] { background-position: -750px 0; }
+.card[data-suit="1"][data-rank="6"] { background-position: -825px 0; }
+.card[data-suit="1"][data-rank="7"] { background-position: -900px 0; }
+.card[data-suit="1"][data-rank="8"] { background-position: 0 0; }
+.card[data-suit="2"][data-rank="1"] { background-position: -450px -315px; }
+.card[data-suit="2"][data-rank="2"] { background-position: -525px -315px; }
+.card[data-suit="2"][data-rank="3"] { background-position: -600px -315px; }
+.card[data-suit="2"][data-rank="4"] { background-position: -675px -315px; }
+.card[data-suit="2"][data-rank="5"] { background-position: -750px -315px; }
+.card[data-suit="2"][data-rank="6"] { background-position: -825px -315px; }
+.card[data-suit="2"][data-rank="7"] { background-position: -900px -315px; }
+.card[data-suit="2"][data-rank="8"] { background-position: 0 -315px; }
+.card[data-suit="3"][data-rank="1"] { background-position: -450px -105px; }
+.card[data-suit="3"][data-rank="2"] { background-position: -525px -105px; }
+.card[data-suit="3"][data-rank="3"] { background-position: -600px -105px; }
+.card[data-suit="3"][data-rank="4"] { background-position: -675px -105px; }
+.card[data-suit="3"][data-rank="5"] { background-position: -750px -105px; }
+.card[data-suit="3"][data-rank="6"] { background-position: -825px -105px; }
+.card[data-suit="3"][data-rank="7"] { background-position: -900px -105px; }
+.card[data-suit="3"][data-rank="8"] { background-position: 0 -105px; }
+.card[data-suit="4"][data-rank="1"] { background-position: -450px -210px; }
+.card[data-suit="4"][data-rank="2"] { background-position: -525px -210px; }
+.card[data-suit="4"][data-rank="3"] { background-position: -600px -210px; }
+.card[data-suit="4"][data-rank="4"] { background-position: -675px -210px; }
+.card[data-suit="4"][data-rank="5"] { background-position: -750px -210px; }
+.card[data-suit="4"][data-rank="6"] { background-position: -825px -210px; }
+.card[data-suit="4"][data-rank="7"] { background-position: -900px -210px; }
+.card[data-suit="4"][data-rank="8"] { background-position: 0 -210px; }
 
 .klab-game .player .cards {
   padding: 10px 0 10px 20px;
@@ -728,7 +761,7 @@ p {
 }
 
 .klab-game .player.your_turn .cards .card.up:hover {
-  transform: translateY(-20px);
+  transform: translateY(-20px) scale(1.2);
   cursor: pointer;
 }
 

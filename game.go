@@ -43,7 +43,7 @@ func NewGame(code string, playerCount, roundCount, maxScore int) (*Game, error) 
 	}
 
 	if playerCount == 2 || playerCount == 4 {
-		if maxScore != 501 && maxScore != 1001 && maxScore != 1501 {
+		if maxScore != 101 && maxScore != 501 && maxScore != 1001 && maxScore != 1501 {
 			return nil, errors.New("invalid max score")
 		}
 	} else {
@@ -931,8 +931,17 @@ func (g *Game) run() {
 	time.Sleep(10 * time.Second)
 
 	g.mu.Lock()
+	var gameOverMessage GameOverMessage
 	for _, p := range g.players {
-		g.send(p.conn, "game_over", GameOverMessage{})
+		gameOverMessage.Positions = append(
+			gameOverMessage.Positions, Position{p.name, scores[p.name]})
+	}
+	sort.Slice(gameOverMessage.Positions, func(i, j int) bool {
+		return scores[gameOverMessage.Positions[i].PlayerName] >
+			scores[gameOverMessage.Positions[j].PlayerName]
+	})
+	for _, p := range g.players {
+		g.send(p.conn, "game_over", gameOverMessage)
 	}
 	g.mu.Unlock()
 }
