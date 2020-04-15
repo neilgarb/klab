@@ -97,12 +97,12 @@ func (m *Manager) JoinGame(conn *websocket.Conn, msg JoinGameMessage) error {
 	game, ok := m.games[code]
 	m.gamesMu.Unlock()
 
-	log.Printf("%s -> %s: %s (%+v)",
-		conn.Request().RemoteAddr, game.code, "join_game", msg)
-
 	if !ok {
 		return errors.New("game not found")
 	}
+
+	log.Printf("%s -> %s: %s (%+v)",
+		conn.Request().RemoteAddr, game.code, "join_game", msg)
 
 	name := strings.TrimSpace(msg.Name)
 	if name == "" {

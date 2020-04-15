@@ -30,6 +30,7 @@ type Game struct {
 	started bool
 	ch      chan *ConnMessage
 	errCh   chan error
+	sendCh  chan *ConnMessage
 }
 
 func NewGame(code string, playerCount, roundCount, maxScore int) (*Game, error) {
@@ -52,12 +53,18 @@ func NewGame(code string, playerCount, roundCount, maxScore int) (*Game, error) 
 		}
 	}
 
-	return &Game{
+	g := &Game{
 		code:        code,
 		playerCount: playerCount,
 		roundCount:  roundCount,
 		maxScore:    maxScore,
-	}, nil
+		sendCh:      make(chan *ConnMessage, playerCount),
+	}
+	for i := 0; i < playerCount; i ++ {
+		go g.sendLoop()
+	}
+
+	return g, nil
 }
 
 func (g *Game) PlayerCount() int {
@@ -179,7 +186,6 @@ func (g *Game) MaybeStart(conn *websocket.Conn) (bool, error) {
 	for _, p := range g.players {
 		playerNames = append(playerNames, p.name)
 	}
-
 	for _, p := range g.players {
 		g.send(p.conn, "game_started", GameStartedMessage{
 			Name:        p.name,
@@ -195,6 +201,10 @@ func (g *Game) MaybeStart(conn *websocket.Conn) (bool, error) {
 }
 
 func (g *Game) run() {
+	defer func() {
+		close(g.sendCh)
+	}()
+
 	g.mu.Lock()
 	var playerNames []string
 	for _, p := range g.players {
@@ -1049,9 +1059,15 @@ func (g *Game) MaybeSay(conn *websocket.Conn, message string) (bool, error) {
 	return true, nil
 }
 
+func (g *Game) sendLoop() {
+	for m := range g.sendCh {
+		websocket.JSON.Send(m.Conn, m.Message)
+	}
+}
+
 func (g *Game) send(conn *websocket.Conn, typ string, data interface{}) {
 	log.Printf("%s -> %s: %s %+v", g.code, conn.Request().RemoteAddr, typ, data)
-	websocket.JSON.Send(conn, MakeMessage(typ, data))
+	g.sendCh <- &ConnMessage{conn, MakeMessage(typ, data)}
 }
 
 func randomPlayMessage() string {
