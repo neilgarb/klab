@@ -579,7 +579,7 @@ async function dealRound(myIdx, data) {
     }
   }
 
-  let $cardUp = $klab.find('.card_up').html('').show();
+  let $cardUp = $klab.find('.card_up').show();
   $cardUp.append(makeCard(data.card_up.suit, data.card_up.rank));
   playSound('card');
 
@@ -948,7 +948,7 @@ function addSpeech(position, message) {
     if ($speech.find('div').length === 0) {
       $speech.hide();
     }
-  }, 5000);
+  }, 4000);
 }
 
 function sendMessage(typ, data) {

@@ -78,7 +78,7 @@ const homeT = `<!doctype html>
 <head>
   <meta charset="utf-8">
   <link rel="stylesheet" href="client/klab.css">
-  <meta name="viewport" content="width=800,user-scalable=no">
+  <meta name="viewport" content="width=860,user-scalable=no">
   <title>Jassus, boet!</title>
 </head>
 <body>
