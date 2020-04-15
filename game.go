@@ -887,7 +887,8 @@ func (g *Game) run() {
 		g.mu.Unlock()
 
 		// Add round scores to game scores.
-		var maxScore int
+		maxScore := -1
+		var haveTie bool
 		round := make([]int, 0, g.playerCount)
 		g.mu.Lock()
 		for _, p := range g.players {
@@ -895,6 +896,8 @@ func (g *Game) run() {
 			scores[p.name] += roundScores[p.name]
 			if scores[p.name] > maxScore {
 				maxScore = scores[p.name]
+			} else if scores[p.name] == maxScore {
+				haveTie = true
 			}
 		}
 		g.mu.Unlock()
@@ -921,7 +924,7 @@ func (g *Game) run() {
 			if maxScore >= g.maxScore {
 				break
 			}
-		} else if len(rounds) == g.roundCount {
+		} else if len(rounds) == g.roundCount && !haveTie {
 			break
 		}
 

@@ -42,6 +42,8 @@ function connect() {
 }
 
 function showHome() {
+  window.onbeforeunload = function() {};
+
   $gameScores.hide();
 
   $klab.html(`
@@ -316,6 +318,10 @@ function showGameLobbyTeams(data) {
 }
 
 function showGame(data) {
+  window.onbeforeunload = function() {
+    return '';
+  };
+
   $klab.html(`
 <div class="klab-game">
   <div class="header">
