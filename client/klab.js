@@ -48,9 +48,7 @@ function showHome() {
 
   $klab.html(`
 <div class="klab-home">
-  <img src="/client/jack.png" class="header home">
-  <h1>Jassus, boet!</h1>
-  <p>A multiplayer Klaberjass game</p>
+  <img src="/client/logo.png" class="header home">
   <div class="buttons">
     <button class="button new-game">New game</button>
     <button class="button join-game">Join game</button>
@@ -70,8 +68,7 @@ function showHome() {
 function showNewGame() {
   $klab.html(`
 <div class="klab-new-game">
-  <img src="/client/jack.png" class="header">
-  <h1>Jassus, boet!</h1>
+  <img src="/client/logo.png" class="header">
   <form autocomplete="off">
     <label class="name">
       <span class="label">Your name</span>
@@ -190,8 +187,7 @@ function showNewGame() {
 function showJoinGame() {
   $klab.html(`
 <div class="klab-join-game">
-  <img src="/client/jack.png" class="header">
-  <h1>Jassus, boet!</h1>
+  <img src="/client/logo.png" class="header">
   <form autocomplete="off">
     <label class="code">
       <span class="label">Game code</span>
@@ -242,8 +238,7 @@ function showJoinGame() {
 function showGameLobbyIndividual(data) {
   $klab.html(`
 <div class="klab-game-lobby individual">
-  <img src="/client/jack.png" class="header">
-  <h1>Jassus, boet!</h1>
+  <img src="/client/logo.png" class="header">
   
   <p class="label">Game code</p>
   <p class="code">${data.code}</p>
@@ -325,8 +320,7 @@ function showGame(data) {
   $klab.html(`
 <div class="klab-game">
   <div class="header">
-    <img src="/client/jack.png">
-    <h1>Jassus, boet!</h1>
+    <img src="/client/logo2.png">
     <div class="divider"></div>
     <div class="actions">
       <button class="button scores">Scores</button>
@@ -579,7 +573,7 @@ async function dealRound(myIdx, data) {
     }
   }
 
-  let $cardUp = $klab.find('.card_up').show();
+  let $cardUp = $klab.find('.card_up').html('').show();
   $cardUp.append(makeCard(data.card_up.suit, data.card_up.rank));
   playSound('card');
 
@@ -877,6 +871,10 @@ async function showRoundScores(data) {
   }
 
   for (let p of data.player_names) {
+    if (!data.scores || !data.scores[p]) {
+      continue;
+    }
+
     let cards = data.scores[p].won_cards;
     let bonuses = data.scores[p].bonuses;
     let $div = $roundScores.find('div[data-player="' + p + '"]');
@@ -948,7 +946,7 @@ function addSpeech(position, message) {
     if ($speech.find('div').length === 0) {
       $speech.hide();
     }
-  }, 4000);
+  }, 5000);
 }
 
 function sendMessage(typ, data) {
