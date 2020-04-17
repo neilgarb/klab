@@ -74,6 +74,7 @@ type BidMessage struct {
 type TrumpsMessage struct {
 	Trumps     int    `json:"trumps"`
 	TookOn     int    `json:"took_on"`
+	Prima      bool   `json:"prima"`
 	ExtraCards []Card `json:"extra_cards"`
 }
 

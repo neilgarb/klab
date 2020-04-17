@@ -390,6 +390,10 @@ p {
   margin-bottom: 32px;
 }
 
+.klab-join-game .code input {
+  text-transform: uppercase;
+}
+
 .klab-join-game .name {
   margin-bottom: 32px;
 }
@@ -491,9 +495,9 @@ p {
 .klab-game .players .player2 {
   width: 500px;
   height: 165px;
-  right: 0;
+  left: 0;
   top: 50%;
-  transform: translateY(-50%) translateX(168px) rotate(-90deg);
+  transform: translateY(-50%) translateX(-168px) rotate(90deg);
   transform-origin: 50% 50%;
 }
 
@@ -508,11 +512,12 @@ p {
 .klab-game .players .player4 {
   width: 500px;
   height: 165px;
-  left: 0;
+  right: 0;
   top: 50%;
-  transform: translateY(-50%) translateX(-168px) rotate(90deg);
+  transform: translateY(-50%) translateX(168px) rotate(-90deg);
   transform-origin: 50% 50%;
 }
+
 
 .klab-game .send_message {
   position: absolute;
@@ -569,6 +574,19 @@ p {
   color: white;
   display: block;
   background: blue;
+  text-align: center;
+}
+
+.klab-game .prima {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}
+
+.klab-game .prima span {
+  color: white;
+  display: block;
+  background: darkorange;
   text-align: center;
 }
 
@@ -677,9 +695,9 @@ p {
 }
 
 .klab-game .trick .card.trick-player1 { transform: translateY(35px); }
-.klab-game .trick .card.trick-player2 { transform: translateX(35px); }
+.klab-game .trick .card.trick-player2 { transform: translateX(-35px); }
 .klab-game .trick .card.trick-player3 { transform: translateY(-35px); }
-.klab-game .trick .card.trick-player4 { transform: translateX(-35px); }
+.klab-game .trick .card.trick-player4 { transform: translateX(35px); }
 
 .klab-game .trumps {
   position: absolute;

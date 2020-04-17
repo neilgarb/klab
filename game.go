@@ -404,13 +404,14 @@ func (g *Game) run() {
 		}
 
 		tookOn = toBid
-		prima = !round2 || toBid == dealer
+		prima = !round2 || toBid != dealer
 
 		g.mu.Lock()
 		for _, p := range g.players {
 			g.send(p.conn, "trumps", TrumpsMessage{
 				Trumps:     int(trumps),
 				TookOn:     tookOn,
+				Prima:      prima,
 				ExtraCards: extra[p.name],
 			})
 		}
@@ -892,7 +893,11 @@ func (g *Game) run() {
 		round := make([]int, 0, g.playerCount)
 		g.mu.Lock()
 		for _, p := range g.players {
-			round = append(round, roundScores[p.name])
+			if g.playerCount == 3 {
+				round = append(round, roundScores[p.name]+scores[p.name])
+			} else {
+				round = append(round, roundScores[p.name])
+			}
 			scores[p.name] += roundScores[p.name]
 			if scores[p.name] > maxScore {
 				maxScore = scores[p.name]

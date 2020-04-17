@@ -378,6 +378,9 @@ function showGame(data) {
   <div class="took_on" style="display: none;">
     <span>Took on</span> 
   </div>
+  <div class="prima" style="display: none;">
+    <span>Prima</span> 
+  </div>
   <div class="speech" style="display: none"></div>
   <div class="your_turn" style="display: none;">Your turn</div>
 </div>
@@ -455,6 +458,7 @@ function showGame(data) {
 function moveDealer(data) {
   $gameScores.hide();
   $klab.find('.took_on').hide();
+  $klab.find('.prima').hide();
   $klab.find('.players .player .dealer').hide();
   $klab.find('.players .player[data-pos=' + data.dealer + '] .dealer').show();
 }
@@ -495,11 +499,13 @@ function showGameScores(data, sound) {
       $rounds.append($round);
       i++;
     }
-    let $total = $(`<div class="round"><div>Total</div></div>`);
-    for (let t of data.total) {
-      $total.append($(`<div>${t}</div>`));
+    if (data.player_names.length !== 3) {
+      let $total = $(`<div class="round"><div>Total</div></div>`);
+      for (let t of data.total) {
+        $total.append($(`<div>${t}</div>`));
+      }
+      $rounds.append($total);
     }
-    $rounds.append($total);
     $rounds.scrollTop($rounds[0].scrollHeight);
   }
 
@@ -653,7 +659,11 @@ async function setTrumps(positions, data) {
   $klab.find('.bid_options').hide();
   for (let j in positions) {
     if (+positions[j] === data.took_on) {
-      $klab.find('.player' + (+j+1) + ' .took_on').show();
+      if (data.prima) {
+        $klab.find('.player' + (+j+1) + ' .prima').show();
+      } else {
+        $klab.find('.player' + (+j+1) + ' .took_on').show();
+      }
     }
   }
   let $cards = $klab.find('.player1 .cards');
@@ -781,13 +791,13 @@ function showTrickWon(positions, data) {
         targetX = 0;
         targetY = screenHeight / 2;
       } else if (+j === 1) {
-        targetX = screenWidth / 2;
+        targetX = -screenWidth / 2;
         targetY = 0;
       } else if (+j === 2) {
         targetX = 0;
         targetY = -screenHeight / 2;
       } else {
-        targetX = -screenWidth / 2;
+        targetX = screenWidth / 2;
         targetY = 0;
       }
       let $trick = $klab.find('.trick');
@@ -814,7 +824,7 @@ function showBonusAwarded(positions, data) {
       }
       setTimeout(function() {
         $cards.find('.card').removeClass('bonus');
-      }, 3000);
+      }, 5000);
     } else {
       for (let c of data.cards) {
         let played = false;
@@ -833,7 +843,7 @@ function showBonusAwarded(positions, data) {
       }
       setTimeout(function() {
         $cards.find('.card').removeClass('bonus').removeClass('up').attr('data-rank', '').attr('data-suit', '');
-      }, 3000);
+      }, 5000);
     }
   }
 }
@@ -859,9 +869,10 @@ async function showRoundScores(data) {
 </div>`);
     $roundScores.find('.wrapper').append($div);
     if (data.took_on === i) {
-      $div.find('.took_on').show();
       if (data.prima) {
         $div.find('.prima').show();
+      } else {
+        $div.find('.took_on').show();
       }
       if (data.pooled) {
         $div.find('.pooled').show();
@@ -879,15 +890,17 @@ async function showRoundScores(data) {
     let bonuses = data.scores[p].bonuses;
     let $div = $roundScores.find('div[data-player="' + p + '"]');
 
-    let sleep = Math.ceil(3000 / cards.length);
-    if (sleep > 300) {
-      sleep = 300;
-    }
-    for (let c of (cards || [])) {
-      $div.find('.cards').append(makeCard(c.card.suit, c.card.rank));
-      $div.find('.score').html(+$div.find('.score').html() + c.score);
-      playSound('card');
-      await new Promise(resolve => setTimeout(resolve, sleep));
+    if (cards) {
+      let sleep = Math.ceil(3000 / cards.length);
+      if (sleep > 300) {
+        sleep = 300;
+      }
+      for (let c of (cards || [])) {
+        $div.find('.cards').append(makeCard(c.card.suit, c.card.rank));
+        $div.find('.score').html(+$div.find('.score').html() + c.score);
+        playSound('card');
+        await new Promise(resolve => setTimeout(resolve, sleep));
+      }
     }
 
     for (let b of (bonuses || [])) {
