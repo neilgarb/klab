@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"net/http/pprof"
 	"os"
 	"path"
 	"strings"
@@ -17,11 +18,24 @@ import (
 )
 
 var addr = flag.String("addr", ":8080", "Listen address")
+var debug = flag.String("debug", ":8082", "Debug address")
 
 func main() {
 	flag.Parse()
 
 	rand.Seed(time.Now().UnixNano())
+
+	go func() {
+		r := httprouter.New()
+		r.HandlerFunc("GET", "/debug/pprof/profile", pprof.Profile)
+		r.HandlerFunc("GET", "/debug/pprof/symbol", pprof.Symbol)
+		r.HandlerFunc("GET", "/debug/pprof/", pprof.Index)
+		r.HandlerFunc("GET", "/debug/pprof/block", pprof.Index)
+		r.HandlerFunc("GET", "/debug/pprof/goroutine", pprof.Index)
+		r.HandlerFunc("GET", "/debug/pprof/heap", pprof.Index)
+		r.HandlerFunc("GET", "/debug/pprof/threadcreate", pprof.Index)
+		http.ListenAndServe(*debug, r)
+	}()
 
 	r := httprouter.New()
 
