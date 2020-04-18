@@ -75,6 +75,7 @@ function showNewGame() {
       <input type="text" name="name" required>
     </label>
     
+    <!--
     <div class="player-count">
       <span class="label">Number of players</span>
       <label>
@@ -130,6 +131,7 @@ function showNewGame() {
         1501
       </label>
     </div>
+    -->
   </forma>
   
   <div class="buttons">
@@ -140,16 +142,16 @@ function showNewGame() {
 `);
   $klab.find('input[name=name]').focus();
 
-  $klab.find('input[name=players]').click(function(e) {
-    let numPlayers = +$('input[name=players]:checked').val();
-    if (numPlayers === 2 || numPlayers === 4) {
-      $klab.find('.round-count').hide();
-      $klab.find('.max-score').show();
-    } else if (numPlayers === 3) {
-      $klab.find('.round-count').show();
-      $klab.find('.max-score').hide();
-    }
-  });
+  // $klab.find('input[name=players]').click(function(e) {
+  //   let numPlayers = +$('input[name=players]:checked').val();
+  //   if (numPlayers === 2 || numPlayers === 4) {
+  //     $klab.find('.round-count').hide();
+  //     $klab.find('.max-score').show();
+  //   } else if (numPlayers === 3) {
+  //     $klab.find('.round-count').show();
+  //     $klab.find('.max-score').hide();
+  //   }
+  // });
 
   $klab.find('.button.create-game').click(function(e) {
     e.preventDefault();
@@ -158,11 +160,7 @@ function showNewGame() {
       let msg = JSON.parse(j.data);
       switch (msg.type) {
         case 'game_lobby':
-          if (msg.data.player_count < 4) {
-            showGameLobbyIndividual(msg.data);
-          } else {
-            showGameLobbyTeams(msg.data);
-          }
+          showGame(msg.data);
           break;
         case 'error':
           showError(msg.data);
@@ -170,12 +168,12 @@ function showNewGame() {
       }
     };
 
-    let playerCount = +($klab.find('input[name=players]:checked').val());
+    // let playerCount = +($klab.find('input[name=players]:checked').val());
     sendMessage('create_game', {
       name: $klab.find('input[name=name]').val(),
-      player_count: playerCount,
-      max_score: +$klab.find('input[name=max_score]:checked').val(),
-      round_count: +$klab.find('input[name=round_count]:checked').val(),
+      // player_count: playerCount,
+      // max_score: +$klab.find('input[name=max_score]:checked').val(),
+      // round_count: +$klab.find('input[name=round_count]:checked').val(),
     });
   });
   $klab.find('.button.back').click(function(e) {
@@ -212,11 +210,7 @@ function showJoinGame() {
       let msg = JSON.parse(j.data);
       switch (msg.type) {
         case 'game_lobby':
-          if (msg.data.player_count < 4) {
-            showGameLobbyIndividual(msg.data);
-          } else {
-            showGameLobbyTeams(msg.data);
-          }
+          showGame(msg.data);
           break;
         case 'error':
           showError(msg.data);
@@ -235,82 +229,82 @@ function showJoinGame() {
   });
 }
 
-function showGameLobbyIndividual(data) {
-  $klab.html(`
-<div class="klab-game-lobby individual">
-  <img src="/client/logo.png" class="header">
-  
-  <p class="label">Game code</p>
-  <p class="code">${data.code}</p>
-  
-  <p class="label">Players</p>
-  <div class="players"></div>
-  
-  <p class="label">Rules</p>
-  <p class="rules">${data.game_description}</p>
-  
-  <div class="buttons">
-    <button class="button start" style="display: none" disabled>Start game</button>
-    <button class="button leave">Leave game</button> 
-  </div>
-</div>
-`);
-
-  let $players = $klab.find('.players');
-  for (let i = 0; i < data.player_count; i++) {
-    let playerName = '⏳';
-    if (data.player_names.length > i) {
-      playerName = data.player_names[i];
-    }
-
-    $players.append(`<div class="player">${playerName}</div>`)
-  }
-
-  ws.onmessage = function(j) {
-    let msg = JSON.parse(j.data);
-    switch (msg.type) {
-      case 'game_lobby':
-        if (msg.data.player_count < 4) {
-          showGameLobbyIndividual(msg.data);
-        } else {
-          showGameLobbyTeams(msg.data);
-        }
-        break;
-      case 'game_started':
-        showGame(msg.data);
-        return;
-      case 'error':
-        showError(msg.data);
-        break;
-    }
-  };
-
-  let $start = $klab.find('.button.start');
-  if (data.host) {
-    $start.show();
-    if (data.can_start) {
-      $start.prop('disabled', false);
-
-      $start.click(function(e) {
-        e.preventDefault();
-        sendMessage('start_game', null);
-      });
-    }
-  }
-
-  $klab.find('.button.leave').click(function(e) {
-    e.preventDefault();
-
-    ws.onmessage = function() { };
-
-    sendMessage('leave_game', null);
-    showHome();
-  });
-}
-
-function showGameLobbyTeams(data) {
-  // TODO
-}
+// function showGameLobbyIndividual(data) {
+//   $klab.html(`
+// <div class="klab-game-lobby individual">
+//   <img src="/client/logo.png" class="header">
+//
+//   <p class="label">Game code</p>
+//   <p class="code">${data.code}</p>
+//
+//   <p class="label">Players</p>
+//   <div class="players"></div>
+//
+//   <p class="label">Rules</p>
+//   <p class="rules">${data.game_description}</p>
+//
+//   <div class="buttons">
+//     <button class="button start" style="display: none" disabled>Start game</button>
+//     <button class="button leave">Leave game</button>
+//   </div>
+// </div>
+// `);
+//
+//   let $players = $klab.find('.players');
+//   for (let i = 0; i < data.player_count; i++) {
+//     let playerName = '⏳';
+//     if (data.player_names.length > i) {
+//       playerName = data.player_names[i];
+//     }
+//
+//     $players.append(`<div class="player">${playerName}</div>`)
+//   }
+//
+//   ws.onmessage = function(j) {
+//     let msg = JSON.parse(j.data);
+//     switch (msg.type) {
+//       case 'game_lobby':
+//         if (msg.data.player_count < 4) {
+//           showGameLobbyIndividual(msg.data);
+//         } else {
+//           showGameLobbyTeams(msg.data);
+//         }
+//         break;
+//       case 'game_started':
+//         showGame(msg.data);
+//         return;
+//       case 'error':
+//         showError(msg.data);
+//         break;
+//     }
+//   };
+//
+//   let $start = $klab.find('.button.start');
+//   if (data.host) {
+//     $start.show();
+//     if (data.can_start) {
+//       $start.prop('disabled', false);
+//
+//       $start.click(function(e) {
+//         e.preventDefault();
+//         sendMessage('start_game', null);
+//       });
+//     }
+//   }
+//
+//   $klab.find('.button.leave').click(function(e) {
+//     e.preventDefault();
+//
+//     ws.onmessage = function() { };
+//
+//     sendMessage('leave_game', null);
+//     showHome();
+//   });
+// }
+//
+// function showGameLobbyTeams(data) {
+//   // TODO
+// }
 
 function showGame(data) {
   window.onbeforeunload = function() {
@@ -323,7 +317,7 @@ function showGame(data) {
     <img src="/client/logo2.png">
     <div class="divider"></div>
     <div class="actions">
-      <button class="button scores">Scores</button>
+      <button class="button scores" style="display: none">Scores</button>
     </div>
   </div>
   <div class="table">
@@ -331,6 +325,13 @@ function showGame(data) {
     <div class="card_up"></div>
     <div class="trick" style="display: none"></div>
     <div class="bid_options" style="display: none;"></div>
+    <div class="invite">
+      <div class="text-wrapper">
+        <span class="title">Game code</span>
+        <span class="code">${data.code}</span>
+      </div>
+      <button class="button start" style="display: none" disabled>Start</button>
+    </div>
     <div class="trumps"></div>
     <div class="players"></div>
     <div class="send_message">
@@ -341,56 +342,28 @@ function showGame(data) {
 </div>
 `);
 
-  let idx;
-  for (idx = 0; idx < data.player_names.length; idx++) {
-    if (data.player_names[idx] === data.name) {
-      break
-    }
-  }
-
-  let positions = [null, null, null, null];
-  if (data.player_names.length === 2) {
-    positions[0] = idx;
-    positions[2] = (idx+1) % 2;
-  } else if (data.player_names.length === 3) {
-    positions[0] = idx;
-    positions[1] = (idx+1) % 3;
-    positions[2] = (idx+2) % 3;
-  } else if (data.player_names.length === 4) {
-    positions[0] = idx;
-    positions[1] = (idx+1) % 4;
-    positions[2] = (idx+2) % 4;
-    positions[3] = (idx+3) % 4;
-  }
-
+  let positions = calcPositions(data.player_names, data.name);
   let $players = $klab.find('.players');
   for (let i = 0; i < positions.length; i ++) {
     if (positions[i] === null) {
       continue;
     }
-    $player = $(`
-<div class="player player${i+1}" data-pos="${positions[i]}">
-  <span class="name">${data.player_names[positions[i]]}</span>
-  <div class="cards"></div>
-  <div class="dealer" style="display: none;">
-    <span>Dealer</span> 
-  </div>
-  <div class="took_on" style="display: none;">
-    <span>Took on</span> 
-  </div>
-  <div class="prima" style="display: none;">
-    <span>Prima</span> 
-  </div>
-  <div class="speech" style="display: none"></div>
-  <div class="your_turn" style="display: none;">Your turn</div>
-</div>
-`);
-    $players.append($player);
+    $players.append(renderPlayer(+i+1, positions[i], data.player_names[positions[i]]));
+  }
+
+  if (data.host) {
+    $klab.find('.button.start').show();
   }
 
   ws.onmessage = function(j) {
     let msg = JSON.parse(j.data);
     switch (msg.type) {
+      case 'game_lobby':
+        positions = rerenderPlayers(msg.data);
+        break;
+      case 'game_started':
+        $klab.find('.invite').hide();
+        break;
       case 'game_scores':
         $roundScores.hide();
         $klab.find('.trumps').hide();
@@ -404,7 +377,7 @@ function showGame(data) {
         moveDealer(msg.data);
         break;
       case 'round_dealt':
-        dealRound(idx, msg.data);
+        dealRound(positions[0], msg.data);
         break;
       case 'bid_request':
         showBidOptions(msg.data);
@@ -445,22 +418,100 @@ function showGame(data) {
   });
 
   $klab.find('.send_message .button').click(function(e) {
+    e.preventDefault();
     say();
   });
 
   $klab.find('.send_message input').keypress(function(e) {
+    e.preventDefault();
     if (e.keyCode === 13) {
       say();
     }
-  })
+  });
+
+  $klab.find('.button.start').click(function(e) {
+    e.preventDefault();
+    sendMessage('start_game', {
+    });
+  });
+}
+
+function calcPositions(playerNames, name) {
+  let idx;
+  for (idx = 0; idx < playerNames.length; idx++) {
+    if (playerNames[idx] === name) {
+      break
+    }
+  }
+
+  let positions = [idx, null, null, null];
+  if (playerNames.length === 2) {
+    positions[2] = (idx + 1) % 2;
+  } else if (playerNames.length === 3) {
+    positions[1] = (idx + 1) % 3;
+    positions[2] = (idx + 2) % 3;
+  } else if (playerNames.length === 4) {
+    positions[1] = (idx + 1) % 4;
+    positions[2] = (idx + 2) % 4;
+    positions[3] = (idx + 3) % 4;
+  }
+
+  return positions;
+}
+
+function renderPlayer(i, pos, name) {
+  return $(`
+  <div class="player player${i}" data-pos="${pos}">
+    <span class="name">${name}</span>
+    <div class="cards"></div>
+    <div class="extra">
+      <div class="dealer" style="display: none;">Dealer</div>
+      <div class="took_on" style="display: none;">Took on</div>
+      <div class="prima" style="display: none;">Prima</div>
+      <div class="pooled" style="display: none;">Pooled</div>
+    </div>
+    <div class="speech" style="display: none"></div>
+    <div class="your_turn" style="display: none;">Your turn</div>
+  </div>`);
+}
+
+function rerenderPlayers(data) {
+  let positions = calcPositions(data.player_names, data.name);
+
+  let $newPlayers = $(`<div class="players"></div>`);
+  $newPlayers.append($klab.find('.player1').detach());
+
+  for (let i = 1; i < positions.length; i ++) {
+    if (positions[i] === null) {
+      continue;
+    }
+    let name = data.player_names[positions[i]];
+    let found = false;
+    for (let j = 2; j < 4; j ++) {
+      let $player = $klab.find('.player' + j);
+      if ($player.find('.name').html() === name) {
+        $player.detach().removeClass('player' + j).addClass('player' + (+i+1)).appendTo($newPlayers);
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+     $newPlayers.append(renderPlayer(i+1, positions[i], name));
+    }
+  }
+  $klab.find('.players').replaceWith($newPlayers);
+
+  $klab.find('.button.start').prop('disabled', data.player_names.length < 2);
+
+  return positions;
 }
 
 function moveDealer(data) {
-  $gameScores.hide();
   $klab.find('.took_on').hide();
   $klab.find('.prima').hide();
   $klab.find('.players .player .dealer').hide();
   $klab.find('.players .player[data-pos=' + data.dealer + '] .dealer').show();
+  styleExtras();
 }
 
 let scores = null;
@@ -520,7 +571,7 @@ function showGameScores(data, sound) {
   });
 }
 
-async function dealRound(myIdx, data) {
+async function dealRound(idx, data) {
   let $deck = $klab.find('.deck').show();
   $deck.html('');
 
@@ -586,7 +637,11 @@ async function dealRound(myIdx, data) {
   for (i = 0; i < data.player_count; i++) {
     let idx = (dealTo+i) % data.player_count;
     let $cards = $players.eq(idx).find('.cards');
-    for (let j = 0; j < 3; j++) {
+    let extraCount = 3;
+    if (+data.player_count === 4) {
+      extraCount = 2;
+    }
+    for (let j = 0; j < extraCount; j++) {
       await new Promise(function(resolve) {
         setTimeout(function() {
           $cards.append(makeCard(null, null));
@@ -664,8 +719,12 @@ async function setTrumps(positions, data) {
       } else {
         $klab.find('.player' + (+j+1) + ' .took_on').show();
       }
+      if (data.pooled) {
+        $klab.find('.player' + (+j+1) + ' .pooled').show();
+      }
     }
   }
+  styleExtras();
   let $cards = $klab.find('.player1 .cards');
   $cards.find('.card:gt(5)').remove();
   for (let c of data.extra_cards) {
@@ -681,6 +740,14 @@ async function setTrumps(positions, data) {
 
   let $trumps = $klab.find('.trumps').show();
   $trumps.html(`Trumps: <span class="trumps-symbol trumps-symbol-${data.trumps}"></span>`);
+}
+
+function styleExtras() {
+  $klab.find('.player .extra div').removeClass('first').removeClass('last');
+  $klab.find('.player .extra').each(function() {
+    $(this).find('div:visible:first').addClass('first');
+    $(this).find('div:visible:last').addClass('last');
+  });
 }
 
 function sortCards() {

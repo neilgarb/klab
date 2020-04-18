@@ -28,6 +28,7 @@ type GameLobbyMessage struct {
 	PlayerCount     int      `json:"player_count"`
 	PlayerNames     []string `json:"player_names"`
 	GameDescription string   `json:"game_description"`
+	Name            string   `json:"name"`
 }
 
 type GameStartedMessage struct {
@@ -75,6 +76,7 @@ type TrumpsMessage struct {
 	Trumps     int    `json:"trumps"`
 	TookOn     int    `json:"took_on"`
 	Prima      bool   `json:"prima"`
+	Pooled     bool   `json:"pooled"`
 	ExtraCards []Card `json:"extra_cards"`
 }
 

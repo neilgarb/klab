@@ -548,9 +548,53 @@ p {
 
 .klab-game .name {
   position: absolute;
-  top: 10px;
-  left: 10px;
+  background: rgba(255, 255, 255, 0.4);
+  padding: 4px 8px;
+  font-size: 14px;
+  color: black;
+  border-top-left-radius: 10px;
+  border-bottom-right-radius: 4px;
 }
+
+.klab-game .extra {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 0;
+}
+
+.klab-game .extra div {
+  padding: 4px 8px;
+  font-size: 14px;
+  display: inline-block;
+}
+
+.klab-game .extra div.last {
+  border-top-right-radius: 10px;
+}
+
+.klab-game .extra div.first {
+  border-bottom-left-radius: 4px;
+}
+
+.klab-game .extra .dealer {
+  color: black;
+  background: rgba(255, 255, 0, 0.6);
+}
+.klab-game .extra .took_on {
+  color: white;
+  background: rgba(0, 0, 255, 0.6);
+}
+.klab-game .extra .prima {
+  color: white;
+  background: rgba(255, 128, 0, 0.6);
+}
+.klab-game .extra .pooled {
+  color: white;
+  background: rgba(255, 0, 0, 0.6);
+}
+
+/*
 .klab-game .dealer {
   position: absolute;
   top: 0;
@@ -560,35 +604,46 @@ p {
 .klab-game .dealer span {
   color: black;
   display: block;
-  background: yellow;
+  background: rgba(255, 255, 0, 0.7);
   text-align: center;
+  border-top-right-radius: 10px;
+  border-bottom-left-radius: 4px;
+  font-size: 14px;
+  padding: 4px 8px;
 }
 
-.klab-game .took_on {
+.klab-game .took_on,
+.klab-game .prima {
   position: absolute;
-  bottom: 0;
+  top: 0;
   right: 0;
+}
+
+.klab-game .took_on span,
+.klab-game .prima span {
+  padding: 4px 8px;
+  border-top-right-radius: 10px;
+  border-bottom-left-radius: 4px;
+  font-size: 14px;
+  text-align: center;
+  display: block;
+}
+
+.klab-game .have_dealer .took_on span,
+.klab-game .have_dealer .prima span {
+
 }
 
 .klab-game .took_on span {
   color: white;
-  display: block;
   background: blue;
-  text-align: center;
-}
-
-.klab-game .prima {
-  position: absolute;
-  bottom: 0;
-  right: 0;
 }
 
 .klab-game .prima span {
   color: white;
-  display: block;
   background: darkorange;
-  text-align: center;
 }
+*/
 
 .klab-game .speech {
   position: absolute;
@@ -690,6 +745,43 @@ p {
   opacity: 0.5;
 }
 
+.klab-game .invite {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translateY(-50%) translateX(-50%);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.klab-game .invite span {
+  display: block;
+}
+
+.klab-game .invite .text-wrapper {
+  flex-grow: 1;
+}
+
+.klab-game .invite .title {
+  text-transform: uppercase;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.klab-game .invite .code {
+  font-size: 24px;
+  margin-top: 5px;
+  font-family: monospace;
+  letter-spacing: 4px;
+}
+
+.klab-game .invite .button {
+  margin: 0 0 0 30px;
+}
+
 .card {
   transition: .5s all;
 }
@@ -703,7 +795,12 @@ p {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: rotate(90deg);
+  transform: translateY(-50%) rotate(90deg);
+  transform-origin: 50% 50%;
+  font-size: 14px;
+  display: flex;
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
 .klab-game .trumps-symbol {
@@ -711,6 +808,7 @@ p {
   width: 20px;
   height: 20px;
   background: url(suit.png) no-repeat left top;
+  margin-left: 5px;
 }
 
 .klab-game .trumps-symbol-1 { background-position: -20px 0; }

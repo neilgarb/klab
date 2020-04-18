@@ -32,31 +32,33 @@ type Game struct {
 	errCh   chan error
 }
 
-func NewGame(code string, playerCount, roundCount, maxScore int) (*Game, error) {
+func NewGame(code string) (*Game, error) {
 	code = strings.TrimSpace(strings.ToUpper(code))
 	if code == "" {
 		return nil, errors.New("no game code provided")
 	}
 
-	if playerCount < 2 || playerCount > 4 {
-		return nil, errors.New("number of players should be 2, 3 or 4")
-	}
-
-	if playerCount == 2 || playerCount == 4 {
-		if maxScore != 101 && maxScore != 501 && maxScore != 1001 && maxScore != 1501 {
-			return nil, errors.New("invalid max score")
-		}
-	} else {
-		if roundCount != 9 && roundCount != 12 && roundCount != 15 && roundCount != 18 {
-			return nil, errors.New("invalid round count")
-		}
-	}
+	//if playerCount < 2 || playerCount > 4 {
+	//	return nil, errors.New("number of players should be 2, 3 or 4")
+	//}
+	//
+	//if playerCount == 2 || playerCount == 4 {
+	//	if maxScore != 101 && maxScore != 501 && maxScore != 1001 && maxScore != 1501 {
+	//		return nil, errors.New("invalid max score")
+	//	}
+	//} else {
+	//	if roundCount != 9 && roundCount != 12 && roundCount != 15 && roundCount != 18 {
+	//		return nil, errors.New("invalid round count")
+	//	}
+	//}
 
 	return &Game{
-		code:        code,
-		playerCount: playerCount,
-		roundCount:  roundCount,
-		maxScore:    maxScore,
+		code: code,
+		//playerCount: playerCount,
+		//roundCount:  roundCount,
+		//maxScore:    maxScore,
+		roundCount: 15,
+		maxScore:   1001,
 	}, nil
 }
 
@@ -88,7 +90,7 @@ func (g *Game) Join(conn *websocket.Conn, name string) error {
 		playerNames = append(playerNames, p.name)
 	}
 
-	if len(g.players) == g.playerCount {
+	if len(g.players) == 4 {
 		return errors.New("this game is full")
 	}
 
@@ -99,21 +101,24 @@ func (g *Game) Join(conn *websocket.Conn, name string) error {
 	g.players = append(g.players, player)
 	playerNames = append(playerNames, player.name)
 
-	var gameDescription string
-	if g.playerCount == 2 || g.playerCount == 4 {
-		gameDescription = fmt.Sprintf("Play until one player has at least %d points", g.maxScore)
-	} else if g.playerCount == 3 {
-		gameDescription = fmt.Sprintf("Play %d single rounds and 3 double rounds", g.roundCount-3)
-	}
+	/*
+		var gameDescription string
+		if g.playerCount == 2 || g.playerCount == 4 {
+			gameDescription = fmt.Sprintf("Play until one player has at least %d points", g.maxScore)
+		} else if g.playerCount == 3 {
+			gameDescription = fmt.Sprintf("Play %d single rounds and 3 double rounds", g.roundCount-3)
+		}
+	*/
 
 	for i, p := range g.players {
 		g.send(p.conn, "game_lobby", GameLobbyMessage{
-			Code:            g.code,
-			Host:            i == 0,
-			CanStart:        g.playerCount == len(g.players),
-			PlayerCount:     g.playerCount,
-			PlayerNames:     playerNames,
-			GameDescription: gameDescription,
+			Code: g.code,
+			Host: i == 0,
+			//CanStart:        g.playerCount == len(g.players),
+			PlayerCount: len(g.players),
+			PlayerNames: playerNames,
+			//GameDescription: gameDescription,
+			Name: p.name,
 		})
 	}
 
@@ -169,10 +174,7 @@ func (g *Game) MaybeStart(conn *websocket.Conn) (bool, error) {
 		return false, errors.New("game has already started")
 	}
 
-	if len(g.players) != g.playerCount {
-		return false, errors.New("game doesn't have enough players")
-	}
-
+	g.playerCount = len(g.players)
 	g.started = true
 
 	var playerNames []string
@@ -224,7 +226,7 @@ func (g *Game) run() {
 
 		time.Sleep(time.Second)
 
-		deck := NewDeck(false)
+		deck := NewDeck(g.playerCount == 2)
 		deck.Shuffle()
 
 		hands := make(map[string][]Card)
@@ -241,8 +243,12 @@ func (g *Game) run() {
 			hands[p.name] = append(hands[p.name], deck.Deal(3)...)
 		}
 		cardUp := deck.Deal(1)[0]
+		extraCount := 3
+		if g.playerCount == 4 {
+			extraCount = 2
+		}
 		for _, p := range g.players {
-			extra[p.name] = append(extra[p.name], deck.Deal(3)...)
+			extra[p.name] = append(extra[p.name], deck.Deal(extraCount)...)
 		}
 		for _, p := range g.players {
 			g.send(p.conn, "round_dealt", RoundDealtMessage{
@@ -412,6 +418,7 @@ func (g *Game) run() {
 				Trumps:     int(trumps),
 				TookOn:     tookOn,
 				Prima:      prima,
+				Pooled:     pool,
 				ExtraCards: extra[p.name],
 			})
 		}
@@ -431,7 +438,11 @@ func (g *Game) run() {
 		bellaPlayed := make(map[Rank]string)
 
 		toPlay := (dealer + 1) % g.playerCount
-		for trickNum := 0; trickNum < 8; trickNum++ {
+		trickCount := 9
+		if g.playerCount == 4 {
+			trickCount = 8
+		}
+		for trickNum := 0; trickNum < trickCount; trickNum++ {
 
 			trick := make([]Card, 0, g.playerCount)
 
