@@ -586,7 +586,7 @@ async function dealRound(myIdx, data) {
   for (i = 0; i < data.player_count; i++) {
     let idx = (dealTo+i) % data.player_count;
     let $cards = $players.eq(idx).find('.cards');
-    for (let j = 0; j < 2; j++) {
+    for (let j = 0; j < 3; j++) {
       await new Promise(function(resolve) {
         setTimeout(function() {
           $cards.append(makeCard(null, null));
@@ -824,7 +824,7 @@ function showBonusAwarded(positions, data) {
       }
       setTimeout(function() {
         $cards.find('.card').removeClass('bonus');
-      }, 5000);
+      }, 6000);
     } else {
       for (let c of data.cards) {
         let played = false;
@@ -843,7 +843,7 @@ function showBonusAwarded(positions, data) {
       }
       setTimeout(function() {
         $cards.find('.card').removeClass('bonus').removeClass('up').attr('data-rank', '').attr('data-suit', '');
-      }, 5000);
+      }, 6000);
     }
   }
 }

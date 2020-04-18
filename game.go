@@ -242,7 +242,7 @@ func (g *Game) run() {
 		}
 		cardUp := deck.Deal(1)[0]
 		for _, p := range g.players {
-			extra[p.name] = append(extra[p.name], deck.Deal(2)...)
+			extra[p.name] = append(extra[p.name], deck.Deal(3)...)
 		}
 		for _, p := range g.players {
 			g.send(p.conn, "round_dealt", RoundDealtMessage{
@@ -815,7 +815,7 @@ func (g *Game) run() {
 			if v > winningScore {
 				roundWinner = k
 				winningScore = v
-			} else if v == winningScore && k == tookOnName {
+			} else if v == winningScore && k != tookOnName {
 				roundWinner = k
 			}
 		}

@@ -770,13 +770,13 @@ p {
 .klab-game .player .cards .card {
   position: relative;
   display: inline-block;
-  margin: 0 -20px 5px 0;
+  margin: 0 -27px 5px 0;
   transition: .2s transform;
   transform: none;
 }
 
 .klab-game .player .cards .card.bonus {
-  transform: translateY(-20px);
+  transform: translateY(-20px) scale(1.2);
 }
 
 .klab-game .player.your_turn .cards .card.up:hover {
