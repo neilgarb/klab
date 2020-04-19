@@ -29,7 +29,13 @@ function connect() {
   ws.onopen = function() {
     console.log('ws open');
     $overlay.hide();
-    showHome();
+
+    if (document.location.hash.startsWith('#') && document.location.hash.length === 5) {
+      showJoinGame(document.location.hash.substr(1));
+      document.location.hash = '';
+    } else {
+      showHome();
+    }
   };
   ws.onclose = function() {
     console.log('ws close');
@@ -61,7 +67,7 @@ function showHome() {
   })
   $klab.find('.button.join-game').click(function(e) {
     e.preventDefault();
-    showJoinGame();
+    showJoinGame('');
   })
 }
 
@@ -72,7 +78,7 @@ function showNewGame() {
   <form autocomplete="off">
     <label class="name">
       <span class="label">Your name</span>
-      <input type="text" name="name" required>
+      <input type="text" name="name">
     </label>
     
     <!--
@@ -182,18 +188,18 @@ function showNewGame() {
   })
 }
 
-function showJoinGame() {
+function showJoinGame(code) {
   $klab.html(`
 <div class="klab-join-game">
   <img src="/client/logo.png" class="header">
   <form autocomplete="off">
     <label class="code">
       <span class="label">Game code</span>
-      <input type="text" name="code" placeholder="XXXX" pattern="[A-Z]{4}" required>
+      <input type="text" name="code" placeholder="XXXX">
     </label>
     <label class="name">
       <span class="label">Your name</span>
-      <input type="text" name="name" required>
+      <input type="text" name="name">
     </label>
     <div class="buttons">
       <button class="button join-game">Join game</button>
@@ -202,7 +208,19 @@ function showJoinGame() {
   </form>
 </div>
 `);
-  $klab.find('input[name=code]').focus();
+
+  let $code = $klab.find('input[name=code]');
+  if (code) {
+    $code.val(code);
+  } else {
+    $code.focus();
+  }
+
+  let $name = $klab.find('input[name=name]');
+  if (code) {
+    $name.focus();
+  }
+
   $klab.find('.button.join-game').click(function(e) {
     e.preventDefault();
 
@@ -328,7 +346,7 @@ function showGame(data) {
     <div class="invite">
       <div class="text-wrapper">
         <span class="title">Game code</span>
-        <span class="code">${data.code}</span>
+        <a href="#${data.code}" class="code">${data.code}</a>
       </div>
       <button class="button start" style="display: none" disabled>Start</button>
     </div>
@@ -348,7 +366,11 @@ function showGame(data) {
     if (positions[i] === null) {
       continue;
     }
-    $players.append(renderPlayer(+i+1, positions[i], data.player_names[positions[i]]));
+    let $player = renderPlayer(+i+1, positions[i], data.player_names[positions[i]]);
+    if (data.player_names.length > 2 && i > 0) {
+      $player.find('.swap').show();
+    }
+    $players.append($player);
   }
 
   if (data.host) {
@@ -363,6 +385,8 @@ function showGame(data) {
         break;
       case 'game_started':
         $klab.find('.invite').hide();
+        $klab.find('.header .actions .button.scores').show();
+        $klab.find('.player .swap').hide();
         break;
       case 'game_scores':
         $roundScores.hide();
@@ -423,7 +447,6 @@ function showGame(data) {
   });
 
   $klab.find('.send_message input').keypress(function(e) {
-    e.preventDefault();
     if (e.keyCode === 13) {
       say();
     }
@@ -460,10 +483,13 @@ function calcPositions(playerNames, name) {
 }
 
 function renderPlayer(i, pos, name) {
-  return $(`
+  let $player = $(`
   <div class="player player${i}" data-pos="${pos}">
     <span class="name">${name}</span>
     <div class="cards"></div>
+    <div class="actions">
+      <button class="button swap" style="display: none;">Swap</button>
+    </div>
     <div class="extra">
       <div class="dealer" style="display: none;">Dealer</div>
       <div class="took_on" style="display: none;">Took on</div>
@@ -473,6 +499,16 @@ function renderPlayer(i, pos, name) {
     <div class="speech" style="display: none"></div>
     <div class="your_turn" style="display: none;">Your turn</div>
   </div>`);
+
+  $player.find('.swap').click(function(e) {
+    e.preventDefault();
+    $klab.find('.player .swap').hide();
+    sendMessage('swap', {
+      new_position: pos,
+    });
+  });
+
+  return $player;
 }
 
 function rerenderPlayers(data) {
@@ -487,16 +523,23 @@ function rerenderPlayers(data) {
     }
     let name = data.player_names[positions[i]];
     let found = false;
-    for (let j = 2; j < 4; j ++) {
+    for (let j = 2; j <= 4; j ++) {
       let $player = $klab.find('.player' + j);
       if ($player.find('.name').html() === name) {
         $player.detach().removeClass('player' + j).addClass('player' + (+i+1)).appendTo($newPlayers);
+        if (data.player_names.length > 2) {
+          $player.find('.swap').show();
+        }
         found = true;
         break;
       }
     }
     if (!found) {
-     $newPlayers.append(renderPlayer(i+1, positions[i], name));
+      let $player = renderPlayer(i+1, positions[i], name);
+      $newPlayers.append($player);
+      if (data.player_names.length > 2) {
+        $player.find('.swap').show();
+      }
     }
   }
   $klab.find('.players').replaceWith($newPlayers);
@@ -572,7 +615,10 @@ function showGameScores(data, sound) {
 }
 
 async function dealRound(idx, data) {
-  let $deck = $klab.find('.deck').show();
+  let $deck = $klab.find('.deck').show().removeClass('other');
+  if (+data.player_count === 4) {
+    $deck.addClass('other');
+  }
   $deck.html('');
 
   playSound('shuffle');
@@ -592,6 +638,11 @@ async function dealRound(idx, data) {
   await new Promise(resolve =>
     setTimeout(() => resolve(), 2000));
 
+  let cardSleep = 200;
+  if (+data.player_count === 4) {
+    cardSleep = 120
+  }
+
   let $players = $klab.find('.players .player');
   $players.find('.cards').html('');
   let dealTo = (data.dealer+1) % data.player_count;
@@ -608,7 +659,7 @@ async function dealRound(idx, data) {
           $cards.append($card);
           playSound('card');
           resolve();
-        }, 200);
+        }, cardSleep);
       });
     }
   }
@@ -625,13 +676,17 @@ async function dealRound(idx, data) {
           $cards.append($card);
           playSound('card');
           resolve();
-        }, 200);
+        }, cardSleep);
       });
     }
   }
 
   let $cardUp = $klab.find('.card_up').html('').show();
-  $cardUp.append(makeCard(data.card_up.suit, data.card_up.rank));
+  if (data.card_up.suit > 0 && data.card_up.rank > 0) {
+    $cardUp.append(makeCard(data.card_up.suit, data.card_up.rank));
+  } else {
+    $cardUp.append(makeCard(data.suits[data.dealer], 1)); // 7
+  }
   playSound('card');
 
   for (i = 0; i < data.player_count; i++) {
@@ -647,7 +702,7 @@ async function dealRound(idx, data) {
           $cards.append(makeCard(null, null));
           playSound('card');
           resolve();
-        }, 200);
+        }, cardSleep);
       });
     }
   }
@@ -666,9 +721,9 @@ function showBidOptions(data) {
   } else {
     $bidOptions.html(`
 <button class="button suit" data-suit="1">Clubs</button>
-<button class="button suit" data-suit="2">Diamonds</button>
-<button class="button suit" data-suit="3">Hearts</button>
-<button class="button suit" data-suit="4">Spades</button>
+<button class="button suit" data-suit="2">Hearts</button>
+<button class="button suit" data-suit="3">Spades</button>
+<button class="button suit" data-suit="4">Diamonds</button>
 <button class="button suit" data-suit="0" style="display:none;">No trumps</button>
 <button class="button pass">Pass</button>
 <div class="pool" style="display: none"><label><input type="checkbox" name="pool"> Pool</label></div>
@@ -891,7 +946,7 @@ function showBonusAwarded(positions, data) {
       }
       setTimeout(function() {
         $cards.find('.card').removeClass('bonus');
-      }, 6000);
+      }, 4000);
     } else {
       for (let c of data.cards) {
         let played = false;
@@ -910,7 +965,7 @@ function showBonusAwarded(positions, data) {
       }
       setTimeout(function() {
         $cards.find('.card').removeClass('bonus').removeClass('up').attr('data-rank', '').attr('data-suit', '');
-      }, 6000);
+      }, 5000);
     }
   }
 }
@@ -924,7 +979,7 @@ async function showRoundScores(data) {
   let i = 0;
   for (let p of data.player_names) {
     let $div = $(`
-<div class="player_scores" data-player="${p}">
+<div class="player_scores" data-player="${i}">
   <h3>
     ${p} - <span class="score">0</span>
     <span class="extra took_on" style="display: none">Took on</span>
@@ -948,14 +1003,14 @@ async function showRoundScores(data) {
     i ++;
   }
 
-  for (let p of data.player_names) {
-    if (!data.scores || !data.scores[p]) {
+  for (let i in data.player_names) {
+    if (!data.scores || !data.scores[i]) {
       continue;
     }
 
-    let cards = data.scores[p].won_cards;
-    let bonuses = data.scores[p].bonuses;
-    let $div = $roundScores.find('div[data-player="' + p + '"]');
+    let cards = data.scores[i].won_cards;
+    let bonuses = data.scores[i].bonuses;
+    let $div = $roundScores.find('div[data-player="' + i + '"]');
 
     if (cards) {
       let sleep = Math.ceil(3000 / cards.length);

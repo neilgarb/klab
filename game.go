@@ -26,6 +26,7 @@ type Game struct {
 	maxScore    int
 
 	mu      sync.Mutex
+	host    string
 	players []*Player
 	started bool
 	ch      chan *ConnMessage
@@ -101,6 +102,9 @@ func (g *Game) Join(conn *websocket.Conn, name string) error {
 	g.players = append(g.players, player)
 	playerNames = append(playerNames, player.name)
 
+	if len(g.players) == 1 {
+		g.host = player.name
+	}
 	/*
 		var gameDescription string
 		if g.playerCount == 2 || g.playerCount == 4 {
@@ -110,10 +114,10 @@ func (g *Game) Join(conn *websocket.Conn, name string) error {
 		}
 	*/
 
-	for i, p := range g.players {
+	for _, p := range g.players {
 		g.send(p.conn, "game_lobby", GameLobbyMessage{
 			Code: g.code,
-			Host: i == 0,
+			Host: p.name == g.host,
 			//CanStart:        g.playerCount == len(g.players),
 			PlayerCount: len(g.players),
 			PlayerNames: playerNames,
@@ -142,10 +146,10 @@ func (g *Game) MaybeLeave(conn *websocket.Conn) bool {
 	}
 	g.players = newPlayers
 
-	for i, p := range g.players {
+	for _, p := range g.players {
 		g.send(p.conn, "game_lobby", GameLobbyMessage{
 			Code:        g.code,
-			Host:        i == 0,
+			Host:        p.name == g.host,
 			CanStart:    g.playerCount == len(g.players),
 			PlayerCount: g.playerCount,
 			PlayerNames: playerNames,
@@ -204,7 +208,7 @@ func (g *Game) run() {
 	}
 	g.mu.Unlock()
 
-	scores := make(map[string]int)
+	scores := make(map[int]int)
 	var rounds [][]int
 
 	dealer := rand.Intn(g.playerCount)
@@ -226,12 +230,11 @@ func (g *Game) run() {
 
 		time.Sleep(time.Second)
 
-		deck := NewDeck(g.playerCount == 2)
+		deck := NewDeck(g.playerCount != 3)
 		deck.Shuffle()
 
 		hands := make(map[string][]Card)
 		extra := make(map[string][]Card)
-		bonuses := make(map[string][]Bonus)
 		var tookOn int
 		var prima bool
 
@@ -242,14 +245,20 @@ func (g *Game) run() {
 		for _, p := range g.players {
 			hands[p.name] = append(hands[p.name], deck.Deal(3)...)
 		}
-		cardUp := deck.Deal(1)[0]
-		extraCount := 3
+
+		var cardUp Card
+		var extraCount int
 		if g.playerCount == 4 {
+			cardUp = Card{suit: AllSuits()[dealer], rank: RankSeven}
 			extraCount = 2
+		} else {
+			cardUp = deck.Deal(1)[0]
+			extraCount = 3
 		}
 		for _, p := range g.players {
 			extra[p.name] = append(extra[p.name], deck.Deal(extraCount)...)
 		}
+
 		for _, p := range g.players {
 			g.send(p.conn, "round_dealt", RoundDealtMessage{
 				PlayerCount: len(g.players),
@@ -257,6 +266,7 @@ func (g *Game) run() {
 				DeckSize:    deck.Size(),
 				Cards:       hands[p.name],
 				CardUp:      cardUp,
+				Suits:       AllSuits(),
 			})
 		}
 		g.mu.Unlock()
@@ -410,7 +420,7 @@ func (g *Game) run() {
 		}
 
 		tookOn = toBid
-		prima = !round2 || toBid != dealer
+		prima = g.playerCount == 3 && (!round2 || toBid != dealer)
 
 		g.mu.Lock()
 		for _, p := range g.players {
@@ -433,7 +443,8 @@ func (g *Game) run() {
 		}
 		extra = nil
 
-		wonCards := make(map[string][]Card)
+		wonCards := make(map[int][]Card)
+		bonuses := make(map[int][]Bonus)
 		announcedBonuses := make(map[string]AnnouncedBonus)
 		bellaPlayed := make(map[Rank]string)
 
@@ -595,8 +606,8 @@ func (g *Game) run() {
 						}
 						if otherRank > 0 {
 							if bellaPlayed[otherRank] == playerName {
-								bonuses[playerName] = append(
-									bonuses[playerName], BonusBella)
+								bonuses[trickPlayerIdx] = append(
+									bonuses[trickPlayerIdx], BonusBella)
 								g.mu.Lock()
 								for _, p := range g.players {
 									g.send(p.conn, "speech", SpeechMessage{
@@ -710,7 +721,7 @@ func (g *Game) run() {
 
 				time.Sleep(2 * time.Second)
 
-				bonuses[highCardPlayerName] = append(bonuses[highCardPlayerName],
+				bonuses[highCardPlayer] = append(bonuses[highCardPlayer],
 					announcedBonuses[highCardPlayerName].Bonus)
 
 				for _, p := range g.players {
@@ -729,17 +740,17 @@ func (g *Game) run() {
 
 			winner := (toPlay + bestPlayer) % g.playerCount
 
-			g.mu.Lock()
-			bestPlayerName := g.players[winner].name
 			for _, c := range trick {
 				if c.suit == trumps && c.rank == RankNine {
-					bonuses[bestPlayerName] = append(bonuses[bestPlayerName], BonusMinel)
+					bonuses[winner] = append(bonuses[winner], BonusMinel)
 				}
 				if c.suit == trumps && c.rank == RankJack {
-					bonuses[bestPlayerName] = append(bonuses[bestPlayerName], BonusJass)
+					bonuses[winner] = append(bonuses[winner], BonusJass)
 				}
-				wonCards[bestPlayerName] = append(wonCards[bestPlayerName], c)
+				wonCards[winner] = append(wonCards[winner], c)
 			}
+
+			g.mu.Lock()
 			for _, p := range g.players {
 				g.send(p.conn, "trick_won", TrickWonMessage{
 					PlayerCount: g.playerCount,
@@ -753,22 +764,51 @@ func (g *Game) run() {
 			toPlay = winner
 		}
 
-		// Last trick.
-		g.mu.Lock()
-		bonuses[g.players[toPlay].name] = append(
-			bonuses[g.players[toPlay].name], BonusStoch)
-		g.mu.Unlock()
+		time.Sleep(2 * time.Second)
 
-		// Calculate scores.
+		// Last trick.
+		bonuses[toPlay] = append(bonuses[toPlay], BonusStoch)
+
+		// Calculate teams for the round.
+		var teams [][]int
+		if g.playerCount == 2 {
+			teams = [][]int{{0}, {1}}
+		} else if g.playerCount == 3 {
+			if pool {
+				teams = [][]int{{tookOn}, {(tookOn + 1) % 3, (tookOn + 2) % 3}}
+			} else {
+				teams = [][]int{{0}, {1}, {2}}
+			}
+		} else {
+			teams = [][]int{{0, 2}, {1, 3}}
+		}
+		teamMap := make(map[int]int) // player -> team
+		for i, t := range teams {
+			for _, tt := range t {
+				teamMap[tt] = i
+			}
+		}
+
+		// Assign won cards and bonuses to teams.
+		roundWonCards := make(map[int][]Card) // team -> cards
+		roundBonuses := make(map[int][]Bonus) // team -> bonuses
+		for k, v := range wonCards {
+			roundWonCards[teamMap[k]] = append(roundWonCards[teamMap[k]], v...)
+		}
+		for k, v := range bonuses {
+			roundBonuses[teamMap[k]] = append(roundBonuses[teamMap[k]], v...)
+		}
+
+		// Calculate team scores.
 		roundScoresMessage := RoundScoresMessage{
 			Title:  fmt.Sprintf("Round %d scores", len(rounds)+1),
-			Scores: make(map[string]RoundScores),
-			TookOn: tookOn,
+			Scores: make(map[int]RoundScores),
+			TookOn: teamMap[tookOn],
 			Pooled: pool,
 			Prima:  prima,
 		}
-		roundScores := make(map[string]int)
-		for k, v := range wonCards {
+		roundScores := make(map[int]int)
+		for k, v := range roundWonCards {
 			for _, vv := range v {
 				var score int
 				switch vv.rank {
@@ -789,7 +829,7 @@ func (g *Game) run() {
 				roundScoresMessage.Scores[k] = m
 			}
 		}
-		for k, v := range bonuses {
+		for k, v := range roundBonuses {
 			for _, vv := range v {
 				roundScores[k] += vv.Value()
 				m := roundScoresMessage.Scores[k]
@@ -798,144 +838,113 @@ func (g *Game) run() {
 			}
 		}
 
-		if pool {
-			var otherScore int
-			g.mu.Lock()
-			for i, p := range g.players {
-				if i == tookOn {
-					continue
-				}
-				otherScore += roundScores[p.name]
-			}
-			for i, p := range g.players {
-				if i == tookOn {
-					continue
-				}
-				roundScores[p.name] = otherScore
-			}
-			g.mu.Unlock()
-		}
-
+		// Send round scores.
 		g.mu.Lock()
-		tookOnName := g.players[tookOn].name
-		g.mu.Unlock()
-
-		var roundWinner string
-		var winningScore int
-		for k, v := range roundScores {
-			if v > winningScore {
-				roundWinner = k
-				winningScore = v
-			} else if v == winningScore && k != tookOnName {
-				roundWinner = k
+		var teamNames []string
+		for _, t := range teams {
+			var names []string
+			for _, tt := range t {
+				names = append(names, g.players[tt].name)
 			}
+			teamNames = append(teamNames, strings.Join(names, " & "))
 		}
-
-		var roundWinnerIdx int
-		g.mu.Lock()
-		for i, p := range g.players {
-			if p.name == roundWinner {
-				roundWinnerIdx = i
-				break
-			}
-		}
-		g.mu.Unlock()
-
-		if g.playerCount == 2 {
-			if roundWinnerIdx != tookOn {
-				roundScores[roundWinner] += roundScores[tookOnName]
-				roundScores[tookOnName] = 0
-			}
-		} else if g.playerCount == 3 {
-			g.mu.Lock()
-			for _, p := range g.players {
-				if roundWinnerIdx == tookOn {
-					mod := 1
-					if pool {
-						mod *= 2
-					}
-					if p.name == roundWinner {
-						roundScores[p.name] = 2 * mod
-					} else {
-						roundScores[p.name] = -1 * mod
-					}
-				} else {
-					mod := 1
-					if prima {
-						mod = 2
-					}
-					if pool {
-						mod *= 2
-					}
-					if p.name == tookOnName {
-						roundScores[p.name] = -2 * mod
-					} else {
-						roundScores[p.name] = 1 * mod
-					}
-				}
-			}
-			g.mu.Unlock()
-
-			if g.roundCount-len(rounds) <= 3 {
-				for k, v := range roundScores {
-					roundScores[k] = v * 2
-				}
-			}
-		} else {
-			// TODO: 4 players
-		}
-
-		time.Sleep(2 * time.Second)
-
-		// Show calculation of round scores.
-		g.mu.Lock()
-		for _, p := range g.players {
-			roundScoresMessage.PlayerNames = append(
-				roundScoresMessage.PlayerNames, p.name)
-		}
+		roundScoresMessage.PlayerNames = teamNames
 		for _, p := range g.players {
 			g.send(p.conn, "round_scores", roundScoresMessage)
 		}
 		g.mu.Unlock()
 
-		// Add round scores to game scores.
-		maxScore := -1
-		var haveTie bool
-		round := make([]int, 0, g.playerCount)
-		g.mu.Lock()
-		for _, p := range g.players {
-			if g.playerCount == 3 {
-				round = append(round, roundScores[p.name]+scores[p.name])
-			} else {
-				round = append(round, roundScores[p.name])
+		time.Sleep(15 * time.Second)
+
+		// Which team won?
+		winningTeam := -1
+		winningScore := -1
+		for k, v := range roundScores {
+			if v > winningScore {
+				winningTeam = k
+				winningScore = v
+			} else if v == winningScore && teamMap[tookOn] != k {
+				winningTeam = k
 			}
-			scores[p.name] += roundScores[p.name]
-			if scores[p.name] > maxScore {
-				maxScore = scores[p.name]
-			} else if scores[p.name] == maxScore {
-				haveTie = true
+		}
+
+		// Assign game scores.
+		gameScores := make(map[int]int) // player -> score
+		var round []int
+		g.mu.Lock()
+		if g.playerCount == 3 {
+			mod := 1
+			if pool {
+				mod *= 2
+			}
+			if g.roundCount-len(rounds) <= 3 {
+				mod *= 2
+			}
+			if prima && teamMap[tookOn] != winningTeam {
+				mod *= 2
+			}
+			if teamMap[tookOn] == winningTeam {
+				gameScores[tookOn] = 2 * mod
+				gameScores[(tookOn+1)%3] = -1 * mod
+				gameScores[(tookOn+2)%3] = -1 * mod
+			} else {
+				gameScores[tookOn] = -2 * mod
+				gameScores[(tookOn+1)%3] = 1 * mod
+				gameScores[(tookOn+2)%3] = 1 * mod
+			}
+			for i := range g.players {
+				round = append(round, gameScores[i])
+			}
+		} else {
+			if teamMap[tookOn] != winningTeam {
+				roundScores[(teamMap[tookOn]+1)%2] += roundScores[teamMap[tookOn]]
+				roundScores[teamMap[tookOn]] = 0
+			}
+			for t := range teams {
+				round = append(round, roundScores[t])
 			}
 		}
 		g.mu.Unlock()
+
 		rounds = append(rounds, round)
+		for k, v := range round {
+			scores[k] += v
+		}
 
-		time.Sleep(15 * time.Second)
-
-		// Show game scores.
+		// Send game scores.
 		g.mu.Lock()
-		total := make([]int, g.playerCount)
-		for i, p := range g.players {
-			total[i] = scores[p.name]
+		var total []int
+		if g.playerCount == 4 {
+			playerNames = []string{
+				g.players[0].name + " & " + g.players[2].name,
+				g.players[1].name + " & " + g.players[3].name,
+			}
+			total = []int{scores[0], scores[1]}
+		} else {
+			var playerNames []string
+			for i, p := range g.players {
+				playerNames = append(playerNames, p.name)
+				total = append(total, scores[i])
+			}
 		}
 		for _, p := range g.players {
 			g.send(p.conn, "game_scores", GameScoresMessage{
 				PlayerNames: playerNames,
-				Total:       total,
 				Scores:      rounds,
+				Total:       total,
 			})
 		}
 		g.mu.Unlock()
 
+		maxScore := -1
+		var haveTie bool
+		for _, v := range scores {
+			if v > maxScore {
+				maxScore = v
+			} else if v == maxScore {
+				haveTie = true
+			}
+		}
 		if g.playerCount == 2 || g.playerCount == 4 {
 			if maxScore >= g.maxScore {
 				break
@@ -951,13 +960,28 @@ func (g *Game) run() {
 
 	g.mu.Lock()
 	var gameOverMessage GameOverMessage
-	for _, p := range g.players {
-		gameOverMessage.Positions = append(
-			gameOverMessage.Positions, Position{p.name, scores[p.name]})
+	if g.playerCount == 4 {
+		gameOverMessage.Positions = append(gameOverMessage.Positions,
+			Position{
+				PlayerName: g.players[0].name + " & " + g.players[2].name,
+				Score:      scores[0],
+			})
+		gameOverMessage.Positions = append(gameOverMessage.Positions,
+			Position{
+				PlayerName: g.players[1].name + " & " + g.players[3].name,
+				Score:      scores[1],
+			})
+	} else {
+		for i, p := range g.players {
+			gameOverMessage.Positions = append(gameOverMessage.Positions,
+				Position{
+					PlayerName: p.name,
+					Score:      scores[i],
+				})
+		}
 	}
 	sort.Slice(gameOverMessage.Positions, func(i, j int) bool {
-		return scores[gameOverMessage.Positions[i].PlayerName] >
-			scores[gameOverMessage.Positions[j].PlayerName]
+		return gameOverMessage.Positions[i].Score > gameOverMessage.Positions[j].Score
 	})
 	for _, p := range g.players {
 		g.send(p.conn, "game_over", gameOverMessage)
@@ -1059,6 +1083,51 @@ func (g *Game) MaybeSay(conn *websocket.Conn, message string) (bool, error) {
 		g.send(p.conn, "speech", SpeechMessage{
 			Player:  player,
 			Message: message,
+		})
+	}
+
+	return true, nil
+}
+
+func (g *Game) MaybeSwap(conn *websocket.Conn, newPosition int) (bool, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+
+	if len(g.players) < 3 {
+		return false, errors.New("can't swap with this many players in the game")
+	}
+
+	player := -1
+	for i, p := range g.players {
+		if p.conn == conn {
+			player = i
+			break
+		}
+	}
+	if player == -1 {
+		return false, nil
+	}
+
+	// Pos player is swapping with newPosition
+	if newPosition >= len(g.players) {
+		return false, errors.New("invalid new position")
+	}
+
+	g.players[player], g.players[newPosition] =
+		g.players[newPosition], g.players[player]
+
+	var playerNames []string
+	for _, p := range g.players {
+		playerNames = append(playerNames, p.name)
+	}
+
+	for _, p := range g.players {
+		g.send(p.conn, "game_lobby", GameLobbyMessage{
+			Code:        g.code,
+			Host:        p.name == g.host,
+			PlayerCount: len(g.players),
+			PlayerNames: playerNames,
+			Name:        p.name,
 		})
 	}
 

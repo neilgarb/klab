@@ -38,6 +38,12 @@ func (m *Manager) Handle(conn *websocket.Conn, msg *Message) error {
 		return m.LeaveGame(conn)
 	case "start_game":
 		return m.StartGame(conn)
+	case "swap":
+		var data SwapMessage
+		if err := json.Unmarshal(msg.Data, &data); err != nil {
+			return err
+		}
+		return m.Swap(conn, data.NewPosition)
 	case "bid", "play", "announce_bonus":
 		return m.Play(conn, msg)
 	case "speech":
@@ -179,6 +185,27 @@ func (m *Manager) Speech(conn *websocket.Conn, message string) error {
 
 	for _, g := range m.games {
 		ok, err := g.MaybeSay(conn, message)
+		if err != nil {
+			return err
+		}
+		if ok {
+			break
+		}
+	}
+
+	return nil
+}
+
+func (m *Manager) Swap(conn *websocket.Conn, newPosition int) error {
+	if newPosition < 0 {
+		return errors.New("new position can't be negative")
+	}
+
+	m.gamesMu.Lock()
+	defer m.gamesMu.Unlock()
+
+	for _, g := range m.games {
+		ok, err := g.MaybeSwap(conn, newPosition)
 		if err != nil {
 			return err
 		}

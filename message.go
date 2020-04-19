@@ -52,6 +52,7 @@ type RoundDealtMessage struct {
 	DeckSize    int    `json:"deck_size"`
 	Cards       []Card `json:"cards"`
 	CardUp      Card   `json:"card_up"`
+	Suits       []Suit `json:"suits"`
 }
 
 type BidRequestMessage struct {
@@ -108,12 +109,12 @@ type BonusAwardedMessage struct {
 }
 
 type RoundScoresMessage struct {
-	Title       string                 `json:"title"`
-	PlayerNames []string               `json:"player_names"`
-	Scores      map[string]RoundScores `json:"scores"`
-	TookOn      int                    `json:"took_on"`
-	Pooled      bool                   `json:"pooled"`
-	Prima       bool                   `json:"prima"`
+	Title       string              `json:"title"`
+	PlayerNames []string            `json:"player_names"`
+	Scores      map[int]RoundScores `json:"scores"`
+	TookOn      int                 `json:"took_on"`
+	Pooled      bool                `json:"pooled"`
+	Prima       bool                `json:"prima"`
 }
 
 type RoundScores struct {
@@ -138,6 +139,10 @@ type GameOverMessage struct {
 type Position struct {
 	PlayerName string `json:"player_name"`
 	Score      int    `json:"score"`
+}
+
+type SwapMessage struct {
+	NewPosition int `json:"new_position"`
 }
 
 func MakeMessage(typ string, data interface{}) *Message {

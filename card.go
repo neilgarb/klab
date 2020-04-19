@@ -7,9 +7,9 @@ type Suit int
 const (
 	SuitUnknown  Suit = 0
 	SuitClubs    Suit = 1
-	SuitDiamonds Suit = 2
-	SuitHearts   Suit = 3
-	SuitSpades   Suit = 4
+	SuitHearts   Suit = 2
+	SuitSpades   Suit = 3
+	SuitDiamonds Suit = 4
 )
 
 func (s Suit) String() string {
@@ -18,22 +18,22 @@ func (s Suit) String() string {
 		return "No trumps"
 	case SuitClubs:
 		return "Clubs"
-	case SuitDiamonds:
-		return "Diamonds"
 	case SuitHearts:
 		return "Hearts"
 	case SuitSpades:
 		return "Spades"
+	case SuitDiamonds:
+		return "Diamonds"
 	}
 	return "Unknown"
 }
 
 func AllSuits() []Suit {
 	return []Suit{
-		SuitHearts,
-		SuitDiamonds,
 		SuitClubs,
+		SuitHearts,
 		SuitSpades,
+		SuitDiamonds,
 	}
 }
 
