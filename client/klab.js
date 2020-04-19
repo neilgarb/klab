@@ -1,9 +1,10 @@
-$(init);
-
 let $klab, $overlay, $error, $roundScores, $gameScores;
 let ws;
+let STATIC_BASE;
 
-function init() {
+function init(staticBase) {
+  STATIC_BASE=staticBase;
+
   $klab = $('#klab');
   $overlay = $('#overlay').show();
   $error = $('#error');
@@ -54,7 +55,7 @@ function showHome() {
 
   $klab.html(`
 <div class="klab-home">
-  <img src="/client/logo.png" class="header home">
+  <img src="${STATIC_BASE}/client/logo.png" class="header home">
   <div class="buttons">
     <button class="button new-game">New game</button>
     <button class="button join-game">Join game</button>
@@ -74,7 +75,7 @@ function showHome() {
 function showNewGame() {
   $klab.html(`
 <div class="klab-new-game">
-  <img src="/client/logo.png" class="header">
+  <img src="${STATIC_BASE}/client/logo.png" class="header">
   <form autocomplete="off">
     <label class="name">
       <span class="label">Your name</span>
@@ -191,7 +192,7 @@ function showNewGame() {
 function showJoinGame(code) {
   $klab.html(`
 <div class="klab-join-game">
-  <img src="/client/logo.png" class="header">
+  <img src="${STATIC_BASE}/client/logo.png" class="header">
   <form autocomplete="off">
     <label class="code">
       <span class="label">Game code</span>
@@ -332,7 +333,7 @@ function showGame(data) {
   $klab.html(`
 <div class="klab-game">
   <div class="header">
-    <img src="/client/logo2.png">
+    <img src="${STATIC_BASE}/client/logo2.png">
     <div class="divider"></div>
     <div class="actions">
       <button class="button scores" style="display: none">Scores</button>
@@ -515,7 +516,7 @@ function rerenderPlayers(data) {
   let positions = calcPositions(data.player_names, data.name);
 
   let $newPlayers = $(`<div class="players"></div>`);
-  $newPlayers.append($klab.find('.player1').detach());
+  $newPlayers.append($klab.find('.player1').detach().attr('data-pos', positions[0]));
 
   for (let i = 1; i < positions.length; i ++) {
     if (positions[i] === null) {
@@ -526,7 +527,11 @@ function rerenderPlayers(data) {
     for (let j = 2; j <= 4; j ++) {
       let $player = $klab.find('.player' + j);
       if ($player.find('.name').html() === name) {
-        $player.detach().removeClass('player' + j).addClass('player' + (+i+1)).appendTo($newPlayers);
+        $player.detach()
+          .removeClass('player' + j)
+          .addClass('player' + (+i+1))
+          .attr('data-pos', positions[i])
+          .appendTo($newPlayers);
         if (data.player_names.length > 2) {
           $player.find('.swap').show();
         }
@@ -552,6 +557,7 @@ function rerenderPlayers(data) {
 function moveDealer(data) {
   $klab.find('.took_on').hide();
   $klab.find('.prima').hide();
+  $klab.find('.pooled').hide();
   $klab.find('.players .player .dealer').hide();
   $klab.find('.players .player[data-pos=' + data.dealer + '] .dealer').show();
   styleExtras();
@@ -1120,7 +1126,7 @@ function playSound(name) {
   }
 
   let xhr = new XMLHttpRequest();
-  xhr.open('GET', '/client/' + name + '.mp3');
+  xhr.open('GET', STATIC_BASE + '/client/' + name + '.mp3');
   xhr.responseType = 'arraybuffer';
   xhr.addEventListener('load', () => {
     let playsound = (audioBuffer) => {

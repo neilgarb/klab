@@ -2,15 +2,15 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"html/template"
 	"log"
 	"math/rand"
 	"net/http"
 	"net/http/pprof"
 	"os"
 	"path"
-	"strings"
 	"time"
-	"html/template"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/neilgarb/klab"
@@ -19,6 +19,7 @@ import (
 
 var addr = flag.String("addr", ":8080", "Listen address")
 var debug = flag.String("debug", ":8082", "Debug address")
+var staticBase = flag.String("static_base", "", "Static base URL")
 
 func main() {
 	flag.Parse()
@@ -46,7 +47,15 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	r.ServeFiles("/client/*filepath", http.Dir(path.Join(wd, "/client")))
+	fileServer := http.FileServer(http.Dir(path.Join(wd, "/client")))
+	r.GET("/client/*filepath", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		cacheUntil := time.Now().AddDate(0, 0, 7).Format(http.TimeFormat)
+		w.Header().Set("Vary", "Accept-Encoding")
+		w.Header().Set("Cache-Control", "public, max-age=7776000")
+		w.Header().Set("Expires", cacheUntil)
+		r.URL.Path = p.ByName("filepath")
+		fileServer.ServeHTTP(w, r)
+	})
 
 	log.Println("Listening")
 	http.ListenAndServe(*addr, r)
@@ -77,21 +86,22 @@ func newConn(conn *websocket.Conn) {
 	}
 }
 
-var csp = strings.Join([]string{
-	"default-src 'self'; ",
-	"img-src 'self'; ",
-	"media-src 'self'; ",
-	"script-src 'self'; ",
-	"connect-src 'self'; ",
-	"font-src 'self' https://fonts.gstatic.com; ",
-	"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;",
-}, "")
+func csp() string {
+	return fmt.Sprintf("default-src 'self'; "+
+		"img-src 'self' %[1]s; "+
+		"media-src 'self' %[1]s; "+
+		"script-src 'self' 'unsafe-inline' %[1]s; "+
+		"connect-src 'self' %[1]s; "+
+		"font-src 'self' https://fonts.gstatic.com; "+
+		"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com %[1]s;",
+		*staticBase)
+}
 
 const homeT = `<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
-  <link rel="stylesheet" href="client/klab.css">
+  <link rel="stylesheet" href="{{.StaticBase}}/client/klab.css">
   <meta name="viewport" content="width=860,user-scalable=no">
   <title>Jassus, boet!</title>
 </head>
@@ -101,12 +111,15 @@ const homeT = `<!doctype html>
   <div id="error" style="display: none"></div>
   <div id="round_scores" style="display: none"></div>
   <div id="game_scores" style="display: none"></div>
-  <script src="client/jquery-3.4.1.min.js"></script>
-  <script src="client/klab.js"></script>
+  <script src="{{.StaticBase}}/client/jquery-3.4.1.min.js"></script>
+  <script src="{{.StaticBase}}/client/klab.js"></script>
+  <script>init({{.StaticBase}});</script>
 </body>
 </html>`
 
 func homeHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	w.Header().Set("Content-Security-Policy", csp)
-	template.Must(template.New("home").Parse(homeT)).Execute(w, nil)
+	w.Header().Set("Content-Security-Policy", csp())
+	template.Must(template.New("home").Parse(homeT)).Execute(w, struct{
+		StaticBase string
+	}{*staticBase})
 }

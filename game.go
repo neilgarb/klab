@@ -869,10 +869,10 @@ func (g *Game) run() {
 		}
 
 		// Assign game scores.
-		gameScores := make(map[int]int) // player -> score
 		var round []int
 		g.mu.Lock()
 		if g.playerCount == 3 {
+			gameScores := make(map[int]int) // player -> score
 			mod := 1
 			if pool {
 				mod *= 2
@@ -880,20 +880,21 @@ func (g *Game) run() {
 			if g.roundCount-len(rounds) <= 3 {
 				mod *= 2
 			}
-			if prima && teamMap[tookOn] != winningTeam {
-				mod *= 2
-			}
 			if teamMap[tookOn] == winningTeam {
 				gameScores[tookOn] = 2 * mod
 				gameScores[(tookOn+1)%3] = -1 * mod
 				gameScores[(tookOn+2)%3] = -1 * mod
 			} else {
+				if prima {
+					mod *= 2
+				}
 				gameScores[tookOn] = -2 * mod
 				gameScores[(tookOn+1)%3] = 1 * mod
 				gameScores[(tookOn+2)%3] = 1 * mod
 			}
 			for i := range g.players {
-				round = append(round, gameScores[i])
+				round = append(round, gameScores[i]+scores[i])
+				scores[i] += gameScores[i]
 			}
 		} else {
 			if teamMap[tookOn] != winningTeam {
@@ -902,14 +903,12 @@ func (g *Game) run() {
 			}
 			for t := range teams {
 				round = append(round, roundScores[t])
+				scores[t] += roundScores[t]
 			}
 		}
 		g.mu.Unlock()
 
 		rounds = append(rounds, round)
-		for k, v := range round {
-			scores[k] += v
-		}
 
 		// Send game scores.
 		g.mu.Lock()
@@ -1043,7 +1042,6 @@ func getBestRun(hand []Card, trumps Suit) []Card {
 
 func (g *Game) MaybePlay(conn *websocket.Conn, msg *Message) (bool, error) {
 	g.mu.Lock()
-	defer g.mu.Unlock()
 
 	var found bool
 	for _, p := range g.players {
@@ -1053,8 +1051,11 @@ func (g *Game) MaybePlay(conn *websocket.Conn, msg *Message) (bool, error) {
 		}
 	}
 	if !found {
+		g.mu.Unlock()
 		return false, nil
 	}
+
+	g.mu.Unlock()
 
 	g.ch <- &ConnMessage{conn, msg}
 	if err := <-g.errCh; err != nil {
@@ -1066,7 +1067,6 @@ func (g *Game) MaybePlay(conn *websocket.Conn, msg *Message) (bool, error) {
 
 func (g *Game) MaybeSay(conn *websocket.Conn, message string) (bool, error) {
 	g.mu.Lock()
-	defer g.mu.Unlock()
 
 	player := -1
 	for i, p := range g.players {
@@ -1076,8 +1076,11 @@ func (g *Game) MaybeSay(conn *websocket.Conn, message string) (bool, error) {
 		}
 	}
 	if player == -1 {
+		g.mu.Unlock()
 		return false, nil
 	}
+
+	g.mu.Unlock()
 
 	for _, p := range g.players {
 		g.send(p.conn, "speech", SpeechMessage{
@@ -1093,10 +1096,6 @@ func (g *Game) MaybeSwap(conn *websocket.Conn, newPosition int) (bool, error) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
-	if len(g.players) < 3 {
-		return false, errors.New("can't swap with this many players in the game")
-	}
-
 	player := -1
 	for i, p := range g.players {
 		if p.conn == conn {
@@ -1106,6 +1105,14 @@ func (g *Game) MaybeSwap(conn *websocket.Conn, newPosition int) (bool, error) {
 	}
 	if player == -1 {
 		return false, nil
+	}
+
+	if g.started {
+		return false, errors.New("game has already started")
+	}
+
+	if len(g.players) < 3 {
+		return false, errors.New("can't swap with this many players in the game")
 	}
 
 	// Pos player is swapping with newPosition
