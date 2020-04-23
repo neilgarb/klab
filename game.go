@@ -247,16 +247,16 @@ func (g *Game) run() {
 		}
 
 		var cardUp Card
-		var extraCount int
 		if g.playerCount == 4 {
 			cardUp = Card{suit: AllSuits()[dealer], rank: RankSeven}
-			extraCount = 2
+			for _, p := range g.players {
+				hands[p.name] = append(hands[p.name], deck.Deal(2)...)
+			}
 		} else {
 			cardUp = deck.Deal(1)[0]
-			extraCount = 3
-		}
-		for _, p := range g.players {
-			extra[p.name] = append(extra[p.name], deck.Deal(extraCount)...)
+			for _, p := range g.players {
+				extra[p.name] = append(extra[p.name], deck.Deal(3)...)
+			}
 		}
 
 		for _, p := range g.players {
@@ -671,7 +671,7 @@ func (g *Game) run() {
 				}
 
 				var highCard Card
-				var highCardPlayer int
+				highCardPlayer := -1
 				var highCardPlayerName string
 
 				g.mu.Lock()
@@ -689,7 +689,8 @@ func (g *Game) run() {
 					}
 
 					if highCard.rank > b.HighCard().rank ||
-						(highCard.rank == b.HighCard().rank && highCard.suit == trumps) {
+						(highCard.rank == b.HighCard().rank && highCard.suit == trumps) ||
+						(highCard.rank == b.HighCard().rank && b.HighCard().suit != trumps) {
 
 						for _, p := range g.players {
 							g.send(p.conn, "speech", SpeechMessage{
@@ -948,7 +949,7 @@ func (g *Game) run() {
 			if maxScore >= g.maxScore {
 				break
 			}
-		} else if len(rounds) == g.roundCount && !haveTie {
+		} else if len(rounds) >= g.roundCount && !haveTie {
 			break
 		}
 

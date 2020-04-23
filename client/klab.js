@@ -705,7 +705,11 @@ async function dealRound(idx, data) {
     for (let j = 0; j < extraCount; j++) {
       await new Promise(function(resolve) {
         setTimeout(function() {
-          $cards.append(makeCard(null, null));
+          if (data.cards.length > 6+j && idx === 0) {
+            $cards.append(makeCard(data.cards[6+j].suit, data.cards[6+j].rank));
+          } else {
+            $cards.append(makeCard(null, null));
+          }
           playSound('card');
           resolve();
         }, cardSleep);
@@ -786,18 +790,19 @@ async function setTrumps(positions, data) {
     }
   }
   styleExtras();
-  let $cards = $klab.find('.player1 .cards');
-  $cards.find('.card:gt(5)').remove();
-  for (let c of data.extra_cards) {
-    await new Promise(function(resolve) {
-      setTimeout(function() {
-        $cards.append(makeCard(c.suit, c.rank));
-        resolve();
-      }, 200);
-    });
+  if (data.extra_cards.length > 0) {
+    let $cards = $klab.find('.player1 .cards');
+    $cards.find('.card:gt(5)').remove();
+    for (let c of data.extra_cards) {
+      await new Promise(function (resolve) {
+        setTimeout(function () {
+          $cards.append(makeCard(c.suit, c.rank));
+          resolve();
+        }, 200);
+      });
+    }
+    sortCards();
   }
-
-  sortCards();
 
   let $trumps = $klab.find('.trumps').show();
   $trumps.html(`Trumps: <span class="trumps-symbol trumps-symbol-${data.trumps}"></span>`);
