@@ -596,7 +596,7 @@ func (g *Game) run() {
 					}
 					hands[playerName] = newHand
 
-					// Bella.
+					// Bela.
 					if playMessage.Card.suit == trumps {
 						var otherRank Rank
 						if playMessage.Card.rank == RankQueen {
@@ -607,12 +607,12 @@ func (g *Game) run() {
 						if otherRank > 0 {
 							if bellaPlayed[otherRank] == playerName {
 								bonuses[trickPlayerIdx] = append(
-									bonuses[trickPlayerIdx], BonusBella)
+									bonuses[trickPlayerIdx], BonusBela)
 								g.mu.Lock()
 								for _, p := range g.players {
 									g.send(p.conn, "speech", SpeechMessage{
 										Player:  trickPlayerIdx,
-										Message: "Bella",
+										Message: "Bela",
 									})
 								}
 								g.mu.Unlock()
@@ -798,6 +798,18 @@ func (g *Game) run() {
 		}
 		for k, v := range bonuses {
 			roundBonuses[teamMap[k]] = append(roundBonuses[teamMap[k]], v...)
+		}
+
+		// Check for black.
+		if g.playerCount != 3 {
+			for i := 0; i < 2; i ++ {
+				if len(roundWonCards[i]) == 0 {
+					roundBonuses[i] = nil
+					roundBonuses[(i+1)%2] = append(
+						roundBonuses[(i+1)%2], BonusBlack)
+					break
+				}
+			}
 		}
 
 		// Calculate team scores.

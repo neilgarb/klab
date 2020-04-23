@@ -6,10 +6,11 @@ const (
 	BonusUnknown Bonus = 0
 	BonusTwenty  Bonus = 1
 	BonusFifty   Bonus = 2
-	BonusBella   Bonus = 3
+	BonusBela   Bonus = 3
 	BonusStoch   Bonus = 4
 	BonusMinel   Bonus = 5
 	BonusJass    Bonus = 6
+	BonusBlack    Bonus = 7
 )
 
 func (b Bonus) String() string {
@@ -18,14 +19,16 @@ func (b Bonus) String() string {
 		return "Twenty"
 	case BonusFifty:
 		return "Fifty"
-	case BonusBella:
-		return "Bella"
+	case BonusBela:
+		return "Bela"
 	case BonusStoch:
 		return "Stoch"
 	case BonusMinel:
 		return "Minel"
 	case BonusJass:
 		return "Jass"
+	case BonusBlack:
+		return "Black"
 	}
 	return "Unknown"
 }
@@ -36,7 +39,7 @@ func (b Bonus) Value() int {
 		return 20
 	case BonusFifty:
 		return 50
-	case BonusBella:
+	case BonusBela:
 		return 20
 	case BonusStoch:
 		return 10
@@ -44,6 +47,8 @@ func (b Bonus) Value() int {
 		return 14
 	case BonusJass:
 		return 20
+	case BonusBlack:
+		return 100
 	}
 	return 0
 }
