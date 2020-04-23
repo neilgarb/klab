@@ -674,12 +674,11 @@ func (g *Game) run() {
 				highCardPlayer := -1
 				var highCardPlayerName string
 
-				g.mu.Lock()
 				for i := 0; i < g.playerCount; i++ {
-					time.Sleep(2 * time.Second)
-
 					announcer := (dealer + 1 + i) % g.playerCount
+					g.mu.Lock()
 					announcerName := g.players[announcer].name
+					g.mu.Unlock()
 					b := announcedBonuses[announcerName]
 					if b.Bonus == BonusUnknown {
 						continue
@@ -692,12 +691,14 @@ func (g *Game) run() {
 						(highCard.rank == b.HighCard().rank && highCard.suit == trumps) ||
 						(highCard.rank == b.HighCard().rank && b.HighCard().suit != trumps) {
 
+						g.mu.Lock()
 						for _, p := range g.players {
 							g.send(p.conn, "speech", SpeechMessage{
 								Player:  announcer,
 								Message: "It's yours.",
 							})
 						}
+						g.mu.Unlock()
 
 						continue
 					}
@@ -712,19 +713,22 @@ func (g *Game) run() {
 					}
 					message += "."
 
+					g.mu.Lock()
 					for _, p := range g.players {
 						g.send(p.conn, "speech", SpeechMessage{
 							Player:  announcer,
 							Message: message,
 						})
 					}
-				}
+					g.mu.Unlock()
 
-				time.Sleep(2 * time.Second)
+					time.Sleep(2 * time.Second)
+				}
 
 				bonuses[highCardPlayer] = append(bonuses[highCardPlayer],
 					announcedBonuses[highCardPlayerName].Bonus)
 
+				g.mu.Lock()
 				for _, p := range g.players {
 					g.send(p.conn, "bonus_awarded", BonusAwardedMessage{
 						Player:       highCardPlayer,
@@ -733,7 +737,6 @@ func (g *Game) run() {
 						CurrentTrick: trick,
 					})
 				}
-
 				g.mu.Unlock()
 			}
 
